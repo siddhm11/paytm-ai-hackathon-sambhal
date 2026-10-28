@@ -6,6 +6,7 @@ video and the deck. **No new features after 1 pm.**
 
 | Time | Block | Done when |
 |---|---|---|
+| Before Sat | Sarvam credits topped up; `python scripts/warm_voice_cache.py --remake kn,en` all "ok"; Wispr listening test re-run | No "BAD" lines |
 | 9:00–9:45 | Arrive, set up, `python scripts/check_keys.py` and (app running) `python scripts/check_mic.py` on venue wifi **and** on hotspot, then Reset | All pass, or you know which network to use |
 | 9:45–10:30 | Full run-through, out loud, with a timer: steps 0–9 | Under 3 minutes |
 | 10:30–11:00 | Beyond Ravi (10–13) and the what-if, out loud | Under 1 minute |

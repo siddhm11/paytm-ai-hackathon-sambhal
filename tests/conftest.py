@@ -7,3 +7,4 @@ from app import config
 @pytest.fixture(autouse=True)
 def offline(monkeypatch):
     monkeypatch.setitem(config.RUNTIME, "offline", True)
+    monkeypatch.setitem(config.RUNTIME, "sarvam_out", False)

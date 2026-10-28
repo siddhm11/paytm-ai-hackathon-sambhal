@@ -40,6 +40,8 @@ if config.SARVAM_API_KEY:
             p.unlink()
         audio = voice.tts(RAVI_REPLY + " (check)", "kn")
         line("Sarvam text-to-speech", len(audio) > 1000, f"{len(audio):,} bytes of audio in {time.time() - t:.1f}s")
+    except RuntimeError as e:
+        line("Sarvam text-to-speech", False, str(e))
     except Exception as e:
         line("Sarvam text-to-speech", False, f"{e} · {voice.STATS['last_error']}")
     if audio:

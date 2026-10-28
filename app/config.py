@@ -58,7 +58,7 @@ VOICE_TIMEOUT = float(os.getenv("VOICE_TIMEOUT", "20"))
 # ---- Offline switch ---------------------------------------------------------
 # OFFLINE=1 forces rules + templates + cached audio, even if keys are set.
 OFFLINE = os.getenv("OFFLINE", "0") == "1"
-RUNTIME = {"offline": OFFLINE}   # can be flipped from the UI during the demo
+RUNTIME = {"offline": OFFLINE, "sarvam_out": False}   # offline: flipped from the UI; sarvam_out: set on a 402
 
 
 def llm_configured() -> bool:
@@ -66,8 +66,8 @@ def llm_configured() -> bool:
 
 
 def llm_enabled() -> bool:
-    return not RUNTIME["offline"] and llm_configured()
+    return not RUNTIME["offline"] and llm_configured() and not (LLM_PROVIDER == "sarvam" and RUNTIME["sarvam_out"])
 
 
 def voice_enabled() -> bool:
-    return not RUNTIME["offline"] and bool(SARVAM_API_KEY)
+    return not RUNTIME["offline"] and bool(SARVAM_API_KEY) and not RUNTIME["sarvam_out"]

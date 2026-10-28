@@ -44,6 +44,13 @@
   empty and the app asks to try again); the model sometimes read the wedding line as "shop closed" (an explicit
   hardship keyword now outranks a vaguer reading). Now: Ravi's line, an off-script fever reply and "okay, but why
   only 3 days?" are all heard word for word in ~0.3 s and handled correctly. 126 tests.
+- 29 Oct, Sambhal's own voice, checked by ear: a Wispr Flow listening test, confirmed with Sarvam speech-to-text on
+  the clean files, found the Kannada voice speaking ₹850 as 800 (any amount ending in fifty), "rupees" in English,
+  Hindi lines cut off before the end, and "सब ठीक है?" sounding like a statement. Fixed: amounts spoken in Kannada
+  words with ರೂಪಾಯಿ, sentence-by-sentence speech, क्या in Hindi questions, "Sambhaal" for the English voice;
+  `warm_voice_cache.py` listens back to every line and remakes faulty ones (`--remake kn,en`); on a 402 (no
+  credits) the app falls back to saved audio, browser speech and rules instead of failing. Audio not yet
+  regenerated: Sarvam credits ran out during testing. 145 tests.
 
 ## On the day (31 Oct 2026)
 - 

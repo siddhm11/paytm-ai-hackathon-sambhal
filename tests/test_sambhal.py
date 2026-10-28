@@ -158,24 +158,37 @@ class FakeResp:
             raise RuntimeError(self.status_code)
 
 
+def tiny_wav(seconds=0.5, rate=22050):
+    import io
+    import wave
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(b"\x01\x00" * int(rate * seconds))
+    return buf.getvalue()
+
+
 def test_sarvam_tts_and_stt_requests(monkeypatch, tmp_path):
     seen = []
 
     def fake_post(url, **kw):
         seen.append((url, kw))
         if url.endswith("/text-to-speech"):
-            return FakeResp(200, {"audios": [base64.b64encode(b"RIFFfake").decode()]})
+            return FakeResp(200, {"audios": [base64.b64encode(tiny_wav()).decode()]})
         return FakeResp(200, {"transcript": RAVI_REPLY, "language_code": "kn-IN"})
 
     monkeypatch.setattr(config, "SARVAM_API_KEY", "sk_test")
     monkeypatch.setattr(config, "CACHE_DIR", tmp_path)
     monkeypatch.setitem(config.RUNTIME, "offline", False)
     monkeypatch.setattr(voice.httpx, "post", fake_post)
-    assert voice.tts("ನಮಸ್ಕಾರ", "kn") == b"RIFFfake"
+    first = voice.tts("ನಮಸ್ಕಾರ", "kn")
+    assert first[:4] == b"RIFF"
     url, kw = seen[-1]
     assert kw["headers"]["api-subscription-key"] == "sk_test"
     assert kw["json"]["language_code"] == "kn-IN" and kw["json"]["model"] == config.TTS_MODEL
-    assert voice.tts("ನಮಸ್ಕಾರ", "kn") == b"RIFFfake" and len(seen) == 1     # second call is cached
+    assert voice.tts("ನಮಸ್ಕಾರ", "kn") == first and len(seen) == 1     # second call is cached
     r = voice.stt(b"\x00" * 2000, "reply.webm", "audio/webm;codecs=opus", "kn")    # exactly what Chrome sends
     assert r["transcript"] == RAVI_REPLY and r["language"] == "kn"
     url, kw = seen[-1]
@@ -444,3 +457,70 @@ def test_what_if_shows_trade_offs_and_never_leaks_into_the_live_menu():
     assert policy.current_settings() == before                        # the live menu is untouched
     with pytest.raises(ValueError):
         policy.with_settings({"pause_days": 30})                      # only the allowed values
+
+
+
+# ---------------------------------------------------------------- Sambhal's own voice (found by a Wispr Flow listening test)
+@pytest.mark.parametrize("n,words", [
+    (850, "ಎಂಟುನೂರ ಐವತ್ತು"), (182, "ನೂರ ಎಂಬತ್ತೆರಡು"), (1032, "ಒಂದು ಸಾವಿರದ ಮೂವತ್ತೆರಡು"),
+    (2550, "ಎರಡು ಸಾವಿರದ ಐನೂರ ಐವತ್ತು"), (6000, "ಆರು ಸಾವಿರ"), (90950, "ತೊಂಬತ್ತು ಸಾವಿರದ ಒಂಬೈನೂರ ಐವತ್ತು"),
+    (136000, "ಒಂದು ಲಕ್ಷದ ಮೂವತ್ತಾರು ಸಾವಿರ"), (21, "ಇಪ್ಪತ್ತೊಂದು"), (23, "ಇಪ್ಪತ್ತಮೂರು"), (26, "ಇಪ್ಪತ್ತಾರು"),
+    (14, "ಹದಿನಾಲ್ಕು"), (100, "ನೂರು"), (200, "ಇನ್ನೂರು"), (0, "ಸೊನ್ನೆ"),
+])
+def test_kannada_numbers_in_words(n, words):
+    assert voice.kn_number(n) == words
+
+
+def test_the_voice_is_given_words_the_screen_keeps_digits():
+    assert voice.speech_text("ನಿಮ್ಮ ₹850 ದಿನದ ಕಂತಿಗೆ", "kn") == "ನಿಮ್ಮ ಎಂಟುನೂರ ಐವತ್ತು ರೂಪಾಯಿ ದಿನದ ಕಂತಿಗೆ"
+    assert voice.speech_text("Sambhal for Demo NBFC", "en") == "Sambhaal for Demo NBFC"
+    assert voice.speech_text("₹160 बाकी हैं", "hi") == "₹160 बाकी हैं"           # Hindi reads digits correctly
+
+
+def test_long_lines_are_spoken_a_sentence_at_a_time(monkeypatch, tmp_path):
+    sent = []
+
+    def fake_post(url, **kw):
+        sent.append(kw["json"]["text"])
+        return FakeResp(200, {"audios": [base64.b64encode(tiny_wav(1.0)).decode()]})
+    monkeypatch.setattr(config, "SARVAM_API_KEY", "sk_test")
+    monkeypatch.setattr(config, "CACHE_DIR", tmp_path)
+    monkeypatch.setitem(config.RUNTIME, "offline", False)
+    monkeypatch.setattr(voice.httpx, "post", fake_post)
+    w = World(use_llm=False)
+    go_to(w, 4)
+    offer = [m for m in w.case_for("M01").messages if m.kind == "offer"][0]
+    audio = voice.tts(f"{replies.header('kn')}. {offer.text}", "kn")
+    assert len(sent) >= 2 and all(len(t) <= 160 for t in sent)               # spoken in pieces
+    assert not any("₹" in t or any(c.isdigit() for c in t) for t in sent)   # amounts and dates in words
+    import io
+    import wave
+    with wave.open(io.BytesIO(audio)) as wv:
+        assert wv.getnframes() / wv.getframerate() >= len(sent) * 1.0       # pieces joined, nothing dropped
+
+
+def test_no_sarvam_credits_switches_to_fallbacks_instead_of_failing(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "SARVAM_API_KEY", "sk_test")
+    monkeypatch.setattr(config, "CACHE_DIR", tmp_path)
+    monkeypatch.setitem(config.RUNTIME, "offline", False)
+    monkeypatch.setattr(voice.httpx, "post", lambda url, **kw: FakeResp(402, {"error": {"message": "No credits available."}}))
+    with pytest.raises(RuntimeError, match="no credits"):
+        voice.tts("ನಮಸ್ಕಾರ", "kn")
+    assert config.RUNTIME["sarvam_out"] and not config.voice_enabled()
+    monkeypatch.setattr(config, "LLM_PROVIDER", "sarvam")
+    assert not config.llm_enabled()                       # the reader falls back to the rules
+
+
+def test_listening_back_catches_wrong_amounts_and_cut_off_lines():
+    from app import voice_qa
+    line = "ನಿಮ್ಮ ₹850 ದಿನದ ಕಂತಿಗೆ ನಾವು ಸಹಾಯ ಮಾಡಬಹುದು."
+    assert voice_qa.check(line, "kn", "ನಿಮ್ಮ 800 ರುಪೀಸ್ ದಿನದ ಕಂತಿಗೆ ನಾವು ಸಹಾಯ ಮಾಡಬಹುದು.")       # what Sarvam heard before
+    assert not voice_qa.check(line, "kn", "ನಿಮ್ಮ 850 ರೂಪಾಯಿ ದಿನದ ಕಂತಿಗೆ ನಾವು ಸಹಾಯ ಮಾಡಬಹುದು.")
+    hi = "अगर दुकान बंद है या धंधा कम है तो बताइए, हम मदद कर सकते हैं।"
+    assert voice_qa.check(hi, "hi", "अगर दुकान बंद है या धन")                                      # cut off
+    assert not voice_qa.check(hi, "hi", "अगर दुकान बंद है या धंधा कम है तो बताइए हम मदद कर सकते हैं")
+
+
+def test_hindi_questions_say_kya_so_they_sound_like_questions():
+    assert "क्या सब ठीक है?" in replies.line("checkin", "hi", first="इमरान", first_en="Imran", installment="940")
+    assert "क्या सब ठीक है?" in replies.line("checkin_red", "hi", first="इमरान", first_en="Imran", arrears="160")

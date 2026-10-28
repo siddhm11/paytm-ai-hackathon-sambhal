@@ -36,7 +36,7 @@ python -m venv .venv && source .venv/bin/activate        # Windows: .venv\Script
 pip install -r requirements.txt
 cp .env.example .env                                      # add your Sarvam key (optional, see below)
 python scripts/check_keys.py                              # live Sarvam voice + AI check
-python scripts/warm_voice_cache.py                        # saves every demo line as audio (needs the key once)
+python scripts/warm_voice_cache.py                        # saves every demo line as audio, listens back to each
 uvicorn app.main:app --port 8000
 python scripts/check_mic.py                               # (app running) end-to-end voice check, then press Reset
 ```
@@ -240,6 +240,19 @@ python scripts/run_evals.py     # human-readable report
   `python scripts/check_mic.py` with the app running: it tests the whole voice path without anyone speaking.
 * **LLM slow on stage:** set `OFFLINE=1` or flip the Offline switch. The rules reader handles all demo lines.
 * **Port busy:** `uvicorn app.main:app --port 8010`.
+* **Sarvam out of credits** (`402 No credits available`): the app switches itself to saved audio, the browser's
+  speech recognition and the rules reader, and the header says so. Top up on the Sarvam dashboard, then run
+  `python scripts/warm_voice_cache.py --remake kn,en` (about ₹100–165 for all 98 lines, listening back included).
+
+### How Sambhal's voice is checked
+
+A Wispr Flow listening test (Sambhal's audio played aloud, Wispr transcribing) and then Sarvam's own speech-to-text
+on the clean files found three faults: the Kannada voice dropped "fifty" from amounts (₹850 spoken as 800,
+₹2,550 as 2,500) and said "rupees" in English; long Hindi lines were cut off before the end; and "सब ठीक है?"
+sounded like a statement ("everything is fine"). Now the voice is given amounts in Kannada words with ರೂಪಾಯಿ
+(the screen still shows ₹850), long lines are spoken a sentence at a time, Hindi questions say क्या, and
+`warm_voice_cache.py` plays every saved line back through speech-to-text and remakes any whose amount or ending
+isn't heard (up to 3 times).
 
 ## Built before vs on the day
 

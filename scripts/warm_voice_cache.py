@@ -1,10 +1,14 @@
-"""Pre-generate Sarvam audio for every message the stage demo can produce.
+"""Pre-generate Sarvam audio for every message the stage demo can produce, and listen back to each one.
 
-Run once with SARVAM_API_KEY set:  python scripts/warm_voice_cache.py
+Run with SARVAM_API_KEY set:  python scripts/warm_voice_cache.py
 Afterwards the demo speaks Kannada/Hindi even with no internet (audio is in data/tts_cache/).
+
+Each line is played back through Sarvam speech-to-text: if an amount isn't heard as written or the end of the line
+is missing, the line is made again (up to 3 times). A Wispr Flow listening test found both faults in saved audio.
+Listening back costs a little speech-to-text credit; --no-check skips it.
 """
+import argparse
 import sys
-import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -13,7 +17,7 @@ try:
 except Exception:
     pass
 
-from app import config, presenter, replies, voice  # noqa: E402
+from app import config, presenter, replies, voice, voice_qa  # noqa: E402
 from app.world import World  # noqa: E402
 
 TRY_LINES = ["Business is slow because of the rain", "Can you waive the interest?", "ನಮ್ಮ ಅಮ್ಮ ನಿನ್ನೆ ತೀರಿಕೊಂಡರು",
@@ -62,22 +66,48 @@ def collect():
     return lines
 
 
-if __name__ == "__main__":
+def main():
+    ap = argparse.ArgumentParser(description="Save every demo line as Sarvam audio, then listen back to each one.")
+    ap.add_argument("--no-check", action="store_true", help="only make missing lines; don't listen back")
+    ap.add_argument("--tries", type=int, default=3, help="remakes allowed for a line that sounds wrong")
+    ap.add_argument("--remake", default="", help="languages to make again from scratch, e.g. kn,en (after a change "
+                                                  "to how they are spoken)")
+    args = ap.parse_args()
     if not config.SARVAM_API_KEY:
         sys.exit("Set SARVAM_API_KEY in .env first.")
     config.RUNTIME["offline"] = False
     todo = collect()
-    print(f"{len(todo)} lines to cache")
-    done = 0
-    for text, lang in todo.items():
-        if voice.cached_tts(text, lang):
-            done += 1
-            continue
-        t = time.time()
-        try:
-            voice.tts(text, lang)
-            done += 1
-            print(f"  ok  {lang} {time.time() - t:.1f}s  {text[:60]}")
-        except Exception as e:
-            print(f"  ERR {lang} {e} {voice.STATS['last_error']}")
-    print(f"Cached {done}/{len(todo)} in {config.CACHE_DIR}")
+    remake = {x.strip() for x in args.remake.split(",") if x.strip()}
+    print(f"{len(todo)} lines" + (f"; making {', '.join(sorted(remake))} again from scratch" if remake else ""))
+    made = remade = 0
+    wrong = []
+    try:
+        for text, lang in todo.items():
+            audio = None if lang in remake else voice.cached_tts(text, lang)
+            if not audio:
+                audio = voice.tts(text, lang, fresh=True)
+                made += 1
+            if args.no_check:
+                continue
+            # Listen back: the amount must be heard as written and the line must not be cut off.
+            problems = voice_qa.check(text, lang, voice_qa.transcribe(audio, lang))
+            tries = 0
+            while problems and tries < args.tries:
+                tries += 1
+                remade += 1
+                audio = voice.tts(text, lang, fresh=True)
+                problems = voice_qa.check(text, lang, voice_qa.transcribe(audio, lang))
+            status = "ok " if not problems else "BAD"
+            print(f"  {status} {lang} {text[:70]}" + (f"\n        {'; '.join(problems)}" if problems else ""))
+            if problems:
+                wrong.append((lang, text, problems))
+    except RuntimeError as e:          # e.g. no Sarvam credits left
+        sys.exit(f"\nStopped: {e}\nMade {made}, remade {remade}. Top up Sarvam credits and run this again.")
+    print(f"\n{len(todo)} lines in {config.CACHE_DIR}: {made} new, {remade} remade after listening back")
+    if wrong:
+        print(f"{len(wrong)} still sound wrong after {args.tries} remakes: check them by ear (Play in the app).")
+    sys.exit(1 if wrong else 0)
+
+
+if __name__ == "__main__":
+    main()

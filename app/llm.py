@@ -45,6 +45,8 @@ def _openai_style(system: str, user: str, json_mode: bool) -> str:
     if r.status_code == 400 and json_mode:      # some models reject response_format: retry plain
         body.pop("response_format", None)
         r = httpx.post(url, headers=headers, json=body, timeout=config.LLM_TIMEOUT)
+    if r.status_code == 402 and config.LLM_PROVIDER == "sarvam":     # out of credits: rules reader from now on
+        config.RUNTIME["sarvam_out"] = True
     r.raise_for_status()
     return r.json()["choices"][0]["message"]["content"] or ""
 

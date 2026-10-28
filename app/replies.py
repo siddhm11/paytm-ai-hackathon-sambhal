@@ -48,7 +48,7 @@ T: dict[str, dict[str, str]] = {
     "checkin": {
         "en": "Namaste {first}. Sales at your shop have been lower than usual for the last 2 days. Is everything okay? "
               "If the shop is closed or business is slow, tell us. We can help with your ₹{installment} daily installment.",
-        "hi": "नमस्ते {first} जी। पिछले 2 दिनों से आपकी दुकान की बिक्री सामान्य से कम है। सब ठीक है? "
+        "hi": "नमस्ते {first} जी। पिछले 2 दिनों से आपकी दुकान की बिक्री सामान्य से कम है। क्या सब ठीक है? "
               "अगर दुकान बंद है या धंधा कम है तो बताइए। आपकी ₹{installment} की रोज़ की किस्त में हम मदद कर सकते हैं।",
         "kn": "ನಮಸ್ಕಾರ {first} ಅವರೇ. ಕಳೆದ 2 ದಿನಗಳಿಂದ ನಿಮ್ಮ ಅಂಗಡಿಯ ವ್ಯಾಪಾರ ಸಾಮಾನ್ಯಕ್ಕಿಂತ ಕಡಿಮೆ ಇದೆ. ಎಲ್ಲಾ ಸರಿ ಇದೆಯಾ? "
               "ಅಂಗಡಿ ಮುಚ್ಚಿದ್ದರೆ ಅಥವಾ ವ್ಯಾಪಾರ ಕಡಿಮೆ ಇದ್ದರೆ ತಿಳಿಸಿ. ನಿಮ್ಮ ₹{installment} ದಿನದ ಕಂತಿಗೆ ನಾವು ಸಹಾಯ ಮಾಡಬಹುದು.",
@@ -56,7 +56,7 @@ T: dict[str, dict[str, str]] = {
     "checkin_red": {
         "en": "Namaste {first}. ₹{arrears} of your installment is pending because sales were low. Is everything okay? "
               "If the shop is closed or business is slow, tell us. We can help.",
-        "hi": "नमस्ते {first} जी। बिक्री कम होने से आपकी किस्त के ₹{arrears} बाकी हैं। सब ठीक है? "
+        "hi": "नमस्ते {first} जी। बिक्री कम होने से आपकी किस्त के ₹{arrears} बाकी हैं। क्या सब ठीक है? "
               "अगर दुकान बंद है या धंधा कम है तो बताइए, हम मदद कर सकते हैं।",
         "kn": "ನಮಸ್ಕಾರ {first} ಅವರೇ. ವ್ಯಾಪಾರ ಕಡಿಮೆ ಆಗಿದ್ದರಿಂದ ನಿಮ್ಮ ಕಂತಿನ ₹{arrears} ಬಾಕಿ ಇದೆ. ಎಲ್ಲಾ ಸರಿ ಇದೆಯಾ? "
               "ಅಂಗಡಿ ಮುಚ್ಚಿದ್ದರೆ ಅಥವಾ ವ್ಯಾಪಾರ ಕಡಿಮೆ ಇದ್ದರೆ ತಿಳಿಸಿ, ನಾವು ಸಹಾಯ ಮಾಡಬಹುದು.",
@@ -160,7 +160,7 @@ T: dict[str, dict[str, str]] = {
         "en": "Want to be ready for the next slow week? Turn on pay-ahead: on days you sell ₹{threshold} or more, "
               "₹{amount} goes towards future installments. On a slow day, your installment is paid from it first. You "
               "can turn it off any time.",
-        "hi": "अगले धीमे हफ़्ते के लिए तैयार रहना चाहते हैं? अग्रिम किस्त चालू करें: जिस दिन बिक्री ₹{threshold} या उससे "
+        "hi": "क्या आप अगले धीमे हफ़्ते के लिए तैयार रहना चाहते हैं? अग्रिम किस्त चालू करें: जिस दिन बिक्री ₹{threshold} या उससे "
               "ज़्यादा हो, उस दिन ₹{amount} आगे की किस्तों में पहले से जमा होगा। कम बिक्री वाले दिन आपकी किस्त पहले उसी से "
               "कटेगी। इसे कभी भी बंद कर सकते हैं।",
         "kn": "ಮುಂದಿನ ಕಡಿಮೆ ವ್ಯಾಪಾರದ ವಾರಕ್ಕೆ ಸಿದ್ಧರಾಗಲು ಮುಂಗಡ ಕಂತು ಆನ್ ಮಾಡಿ: ₹{threshold} ಅಥವಾ ಹೆಚ್ಚು ಮಾರಾಟವಾದ ದಿನ, "

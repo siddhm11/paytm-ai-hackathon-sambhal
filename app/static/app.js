@@ -77,7 +77,7 @@ function renderTop() {
   const w = $("#clockWin"); w.textContent = open ? "Contact window open" : "Outside 8 am–7 pm"; w.classList.toggle("closed", !open);
   const st = S.status;
   const cv = $("#chipVoice");
-  cv.textContent = st.voice.on ? "Voice: Sarvam" : st.voice.configured ? "Voice: cached audio" : "Voice: browser";
+  cv.textContent = st.voice.on ? "Voice: Sarvam" : st.sarvam_out ? "Voice: cached (no Sarvam credits)" : st.voice.configured ? "Voice: cached audio" : "Voice: browser";
   cv.className = "chip " + (st.voice.on ? "on" : "off");
   cv.title = st.voice.on ? `${st.voice.stt} · ${st.voice.tts} (${st.voice.speaker})` : "No Sarvam key, or offline mode: cached audio and the browser's own voice";
   const ca = $("#chipAI");

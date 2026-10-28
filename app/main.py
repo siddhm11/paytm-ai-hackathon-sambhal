@@ -26,7 +26,7 @@ FOCUS = "M01"
 
 def status() -> dict:
     return {
-        "offline": config.RUNTIME["offline"],
+        "offline": config.RUNTIME["offline"], "sarvam_out": config.RUNTIME["sarvam_out"],
         "llm": {"configured": config.llm_configured(), "on": config.llm_enabled(), "provider": config.LLM_PROVIDER,
                 "model": config.LLM_MODEL, "rewrite": config.LLM_REWRITE, **llm.STATS},
         "voice": {"configured": bool(config.SARVAM_API_KEY), "on": config.voice_enabled(), "stt": config.STT_MODEL,

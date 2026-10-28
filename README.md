@@ -30,7 +30,15 @@ uvicorn app.main:app --port 8000
 
 Needs Python 3.10+ (3.9 also works). `run.sh` uses [uv](https://docs.astral.sh/uv/) to set up Python 3.12 if you have it.
 
-Open http://localhost:8000 and press **Next ▶** (or the → key) to walk through Ravi's week.
+Open http://localhost:8000 and press **Next ▶** (or the → key) to walk through Ravi's week. Each step opens the
+right screens and highlights what the caption talks about. **Big text** in the header is for projectors; **About**
+reopens the welcome card.
+
+The phone on the left is the merchant's app, in their language (English underneath with **EN**):
+**Home** (last settlement, next deduction, and three big buttons: tell us about a closure, ask about my loan, talk
+to a person), **Messages** (voice notes, one-tap reasons, a large mic button, offers with a day-by-day preview) and
+**My loan** (balance, a 14-day deduction calendar, the new-loan check). The shortcuts under the phone are for the
+presenter, not part of the app.
 `./run.sh` (Mac/Linux) or `run_windows.bat` do the install and start in one step.
 
 **No keys? It still runs.** Without keys Sambhal uses its multilingual rules reader, approved templates and

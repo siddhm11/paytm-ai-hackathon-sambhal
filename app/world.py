@@ -12,7 +12,7 @@ from datetime import date, datetime, time, timedelta
 
 from . import config, guardrails, llm, nlu, policy, replies, signals
 from .data import TRANSLATIONS, build, money, same_weekday_baseline
-from .ledger import LoanState, replay, run_day
+from .ledger import LoanState, day_terms, replay, run_day
 
 OPEN_STATES = {"held", "waiting", "offered", "accepted", "with_person", "review", "grievance", "stopped", "declined"}
 REASON_LABEL = {
@@ -24,6 +24,7 @@ INTENT_GLOSS = {
     "medical_emergency": "Says a family member is in hospital.",
     "stop_contact": "Asks us to stop messaging.",
     "dispute": "Says a deduction was wrong or already paid.",
+    "talk_to_person": "Asks to talk to a person.",
     "request_waiver": "Asks to waive or reduce the dues.",
     "family_event": "Says there is a family function; shop affected.",
     "illness": "Says they are unwell.",
@@ -41,7 +42,7 @@ KIND_LABEL = {"checkin": "check-in", "offer": "offer", "confirm": "confirmation"
               "waiver_decline": "waiver reply", "dispute": "grievance acknowledgement", "stop_ack": "stop confirmation",
               "ack": "acknowledgement", "no_option": "not-eligible reply", "balance": "balance answer",
               "ask_reason": "clarifying question", "welcome_back": "recovery message",
-              "more_time": "longer-pause request reply"}
+              "more_time": "longer-pause request reply", "human_ack": "person-will-call reply"}
 
 
 @dataclass
@@ -401,7 +402,8 @@ class World:
             opt = policy.option(oid)
             lang = self.merchants[mid].lang
             cards.append({"id": oid, "label": opt["label"][lang], "label_en": opt["label"]["en"],
-                          "text": replies.line(k, lang, **f), "text_en": replies.line(k, "en", **f)})
+                          "text": replies.line(k, lang, **f), "text_en": replies.line(k, "en", **f),
+                          "preview": preview(t, start)})
         parts.append(("offer_close", {}))
         case.cards = cards
         return parts, el["blocked"]
@@ -438,6 +440,16 @@ class World:
             self.cancel_held(case)
             self.audit(mid, "Grievance", "routed", case.human_reason)
             say([("dispute", {})], "dispute")
+            return
+        if intent == "talk_to_person":
+            # Always possible, at any stage. An open offer stays open.
+            case.human = True
+            case.human_reason = "Merchant asked to talk to a person: call between 8 am and 7 pm"
+            if case.state not in ("offered", "accepted"):
+                case.state = "with_person"
+            self.note(case, case.human_reason + ".", "block")
+            self.audit(mid, "Talk to a person", "routed", case.human_reason)
+            say([("human_ack", {})], "human_ack")
             return
         if intent == "request_waiver":
             case.human = True
@@ -641,7 +653,8 @@ class World:
         recent = [r for r in self.rows[mid][-14:]]
         case = self.case_for(mid)
         return {
-            "id": mid, "owner": m.owner, "first": m.first, "shop": m.shop, "kind": m.kind, "area": m.area,
+            "id": mid, "owner": m.owner, "first": m.first, "first_local": m.first_local, "shop": m.shop,
+            "kind": m.kind, "area": m.area,
             "lang": m.lang, "phone": m.phone, "consent": m.consent, "note": m.note,
             "loan": {"principal": loan.principal, "total": loan.total, "installment": loan.installment,
                      "tenure_days": loan.tenure_days, "disbursed_on": loan.disbursed_on.isoformat(),
@@ -652,7 +665,39 @@ class World:
                         "baseline": round(same_weekday_baseline(self.sales[mid], r["date"])),
                         "deducted": r["deducted"], "arrears": r["arrears"], "paused": r["paused"]} for r in recent],
             "case": self.case_view(case) if case else None,
+            "upcoming": self.upcoming(mid),
+            "ends_on": (self.now.date() + timedelta(days=-(-max(loan.total - st.collected, 0) // loan.installment))).isoformat(),
         }
+
+    def upcoming(self, mid: str, days: int = 7) -> list[dict]:
+        """The next deductions as the merchant's app shows them (from the loan's adjustment calendar)."""
+        loan, st = self.loans[mid], self.states[mid]
+        start = self.today_deduction_date()
+        out = []
+        for k in range(days):
+            d = start + timedelta(days=k)
+            inst, catchup, paused = day_terms(loan, d)
+            out.append({"date": d.isoformat(), "dow": d.strftime("%a"), "installment": inst, "catchup": catchup,
+                        "paused": paused, "arrears": st.arrears if k == 0 else 0,
+                        "due": inst + catchup + (st.arrears if k == 0 else 0)})
+        return out
+
+
+def preview(t: dict, start: date, days: int = 7) -> list[dict]:
+    """What each of the next days would cost if this option is accepted."""
+    out = []
+    for k in range(days):
+        d = start + timedelta(days=k)
+        if t["kind"] == "pause":
+            paused = d in t["pause_dates"]
+            amt = 0 if paused else t["installment"] + t["catchup"].get(d, 0)
+            kind = "paused" if paused else ("catchup" if d in t["catchup"] else "normal")
+        else:
+            reduced = d in t["reduced_dates"]
+            amt = t["reduced_installment"] if reduced else t["installment"]
+            kind = "reduced" if reduced else "normal"
+        out.append({"date": d.isoformat(), "dow": d.strftime("%a"), "amount": amt, "kind": kind})
+    return out
 
 
 def gloss(r: dict) -> str:

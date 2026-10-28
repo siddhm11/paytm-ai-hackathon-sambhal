@@ -5,7 +5,6 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 let S = null;                 // last /api/state snapshot
 let focus = "M01";
 let tab = "cases";
-let ptab = "chat";
 let lastSpoken = Infinity;    // highest outbound message id already spoken (Infinity until first load)
 let busy = false;
 let proofLoaded = false;
@@ -56,6 +55,7 @@ async function load(f) {
   S = await api(`/api/state?focus=${focus}`);
   focus = S.focus;
   if (lastSpoken === Infinity) lastSpoken = maxOutId();
+  if (seenOut[focus] === undefined) seenOut[focus] = maxOutId();
   render();
 }
 function maxOutId() {
@@ -104,25 +104,141 @@ function renderStory() {
   $("#btnPrev").disabled = S.step === 0;
   $("#btnNext").disabled = S.step >= S.steps.length - 1;
   $("#btnNext").textContent = S.step >= S.steps.length - 1 ? "End" : "Next ▶";
+  document.documentElement.style.setProperty("--story-h", `${$(".story").offsetHeight}px`);
 }
 
-// ---------------------------------------------------------------- phone
+// ---------------------------------------------------------------- phone: the merchant's app
+// Words on the merchant's screens, in their language. English shows underneath when EN is on.
+const UI = {
+  en: {
+    home: "Home", messages: "Messages", loan: "My loan", hello: "Namaste", last_day: "Last settlement", sales: "Sales",
+    deducted: "Deducted", next_ded: "Next deduction", paused: "Paused", catchup: "incl. catch-up", pending: "incl. pending",
+    tell_closure: "Tell us about a closure", ask_loan: "Ask about my loan", talk_person: "Talk to a person",
+    msg_waiting: "Sambhal has a message for you", open: "Open", pause_on: "Your pause is on",
+    person_call: "A person from the lender will call you, 8 am–7 pm", recovered: "Sales are back to normal",
+    tap_speak: "Tap to speak", stop_rec: "Tap to stop", what_happened: "Tell us what happened",
+    family: "Family function", illness: "Unwell", closed: "Shop closed", slow: "Sales slow", hospital: "Hospital",
+    fine: "All fine", more: "Need more days", person: "Talk to a person", accept: "Accept", accepted: "Accepted",
+    outstanding: "Left to repay", paid: "paid", ends: "Last installment, about", daily: "Daily installment",
+    last7: "Last 7 days", next7: "Next 7 days", no_msgs: "No messages. Sambhal only writes when it can help.",
+    type_here: "Type a reply…", l_ok: "Deducted", l_pz: "Paused", l_od: "Overdue", l_cu: "With catch-up",
+    new_loan: "Thinking of a new loan? Check what fits",
+  },
+  kn: {
+    home: "ಮುಖಪುಟ", messages: "ಸಂದೇಶಗಳು", loan: "ನನ್ನ ಸಾಲ", hello: "ನಮಸ್ಕಾರ", last_day: "ಕೊನೆಯ ದಿನದ ಲೆಕ್ಕ", sales: "ಮಾರಾಟ",
+    deducted: "ಕಡಿತ", next_ded: "ಮುಂದಿನ ಕಡಿತ", paused: "ವಿರಾಮ", catchup: "ಬಾಕಿ ಕಂತು ಸೇರಿ", pending: "ಬಾಕಿ ಸೇರಿ",
+    tell_closure: "ಅಂಗಡಿ ಮುಚ್ಚುವ ಬಗ್ಗೆ ತಿಳಿಸಿ", ask_loan: "ನನ್ನ ಸಾಲದ ಬಗ್ಗೆ ಕೇಳಿ", talk_person: "ಒಬ್ಬ ವ್ಯಕ್ತಿಯೊಂದಿಗೆ ಮಾತನಾಡಿ",
+    msg_waiting: "ಸಂಭಲ್‌ನಿಂದ ನಿಮಗೆ ಸಂದೇಶ ಬಂದಿದೆ", open: "ತೆರೆಯಿರಿ", pause_on: "ನಿಮ್ಮ ವಿರಾಮ ಜಾರಿಯಲ್ಲಿದೆ",
+    person_call: "ಸಾಲದಾತರ ಕಡೆಯಿಂದ ಒಬ್ಬರು ಬೆಳಿಗ್ಗೆ 8 ರಿಂದ ಸಂಜೆ 7 ರ ನಡುವೆ ಕರೆ ಮಾಡುತ್ತಾರೆ", recovered: "ವ್ಯಾಪಾರ ಮತ್ತೆ ಸಾಮಾನ್ಯವಾಗಿದೆ",
+    tap_speak: "ಮಾತನಾಡಲು ಒತ್ತಿ", stop_rec: "ನಿಲ್ಲಿಸಲು ಒತ್ತಿ", what_happened: "ಏನಾಯಿತು ಎಂದು ತಿಳಿಸಿ",
+    family: "ಮನೆಯಲ್ಲಿ ಕಾರ್ಯಕ್ರಮ", illness: "ಹುಷಾರಿಲ್ಲ", closed: "ಅಂಗಡಿ ಮುಚ್ಚಿದೆ", slow: "ವ್ಯಾಪಾರ ಕಡಿಮೆ", hospital: "ಆಸ್ಪತ್ರೆ",
+    fine: "ಎಲ್ಲಾ ಸರಿ", more: "ಇನ್ನೂ ಹೆಚ್ಚು ದಿನ ಬೇಕು", person: "ವ್ಯಕ್ತಿಯೊಂದಿಗೆ ಮಾತನಾಡಿ", accept: "ಒಪ್ಪುತ್ತೇನೆ", accepted: "ಒಪ್ಪಿದ್ದೀರಿ",
+    outstanding: "ಇನ್ನೂ ಪಾವತಿಸಬೇಕಾದದ್ದು", paid: "ಪಾವತಿಸಲಾಗಿದೆ", ends: "ಕೊನೆಯ ಕಂತು, ಸುಮಾರು", daily: "ದಿನದ ಕಂತು",
+    last7: "ಕಳೆದ 7 ದಿನಗಳು", next7: "ಮುಂದಿನ 7 ದಿನಗಳು", no_msgs: "ಯಾವುದೇ ಸಂದೇಶವಿಲ್ಲ. ಸಹಾಯ ಮಾಡಲು ಸಾಧ್ಯವಾದಾಗ ಮಾತ್ರ ಸಂಭಲ್ ಬರೆಯುತ್ತದೆ.",
+    type_here: "ಉತ್ತರ ಬರೆಯಿರಿ…", l_ok: "ಕಡಿತವಾಗಿದೆ", l_pz: "ವಿರಾಮ", l_od: "ಬಾಕಿ", l_cu: "ಬಾಕಿ ಕಂತು ಸೇರಿ",
+    new_loan: "ಹೊಸ ಸಾಲ ಬೇಕೇ? ಎಷ್ಟು ಸರಿ ಎಂದು ನೋಡಿ",
+  },
+  hi: {
+    home: "होम", messages: "संदेश", loan: "मेरा लोन", hello: "नमस्ते", last_day: "पिछले दिन का हिसाब", sales: "बिक्री",
+    deducted: "कटौती", next_ded: "अगली कटौती", paused: "छूट", catchup: "बकाया सहित", pending: "बाकी सहित",
+    tell_closure: "दुकान बंद होने के बारे में बताएँ", ask_loan: "मेरे लोन के बारे में पूछें", talk_person: "किसी व्यक्ति से बात करें",
+    msg_waiting: "संभल से आपके लिए संदेश आया है", open: "खोलें", pause_on: "आपकी छूट चालू है",
+    person_call: "लेंडर की ओर से कोई सुबह 8 से शाम 7 बजे के बीच कॉल करेगा", recovered: "बिक्री फिर से सामान्य है",
+    tap_speak: "बोलने के लिए दबाएँ", stop_rec: "रोकने के लिए दबाएँ", what_happened: "बताइए क्या हुआ",
+    family: "घर में समारोह", illness: "तबीयत खराब", closed: "दुकान बंद", slow: "धंधा कम", hospital: "अस्पताल",
+    fine: "सब ठीक", more: "और दिन चाहिए", person: "किसी से बात करें", accept: "स्वीकार करें", accepted: "स्वीकार किया",
+    outstanding: "चुकाना बाकी", paid: "चुकाया", ends: "आख़िरी किस्त, लगभग", daily: "रोज़ की किस्त",
+    last7: "पिछले 7 दिन", next7: "अगले 7 दिन", no_msgs: "कोई संदेश नहीं। संभल तभी लिखता है जब मदद कर सके।",
+    type_here: "जवाब लिखें…", l_ok: "कटा", l_pz: "छूट", l_od: "बाकी", l_cu: "बकाया सहित",
+    new_loan: "नया लोन चाहिए? देखें कितना सही है",
+  },
+};
+const LOCALE = { kn: "kn-IN", hi: "hi-IN", en: "en-IN" };
+const ICON = { family: "🎉", illness: "🤒", closed: "🔒", slow: "📉", hospital: "🏥", fine: "👍", more: "⏳", person: "📞" };
+let screen = "home";        // merchant app screen: home | chat | loan
+let reasonMode = false;     // "Tell us about a closure" opens the reason picker
+const seenOut = {};         // per merchant: newest outbound message seen on the Messages screen
+
+const ML = () => S.merchant.lang;
+function t(k, lang = ML()) { return (UI[lang] || UI.en)[k] ?? UI.en[k] ?? k; }
+function tt(k) {
+  const lang = ML(), en = $("#enToggle").checked && lang !== "en";
+  return `<span ${langAttr(lang)}>${esc(t(k))}</span>${en ? `<small class="en-sub">${esc(t(k, "en"))}</small>` : ""}`;
+}
+function ldate(iso, opts = { weekday: "short", day: "numeric", month: "short" }) {
+  return D(iso).toLocaleDateString(LOCALE[ML()] || "en-IN", opts);
+}
+const lday = iso => `${ldate(iso, { weekday: "short" })} ${D(iso).getDate()}`;
+
+function setScreen(s) { screen = s; if (s !== "chat") reasonMode = false; renderPhone(); }
+
 function renderPhone() {
   const m = S.merchant;
   $("#phAvatar").textContent = m.first[0];
   $("#phName").textContent = m.owner;
   $("#phShop").textContent = `${m.shop} · ${LANG_LABEL[m.lang]}`;
-  const showEn = $("#enToggle").checked;
+  $$(".ph-nav button").forEach(b => {
+    b.classList.toggle("on", b.dataset.scr === screen);
+    b.querySelector("span").innerHTML = tt({ home: "home", chat: "messages", loan: "loan" }[b.dataset.scr]);
+  });
+  $("#scrHome").hidden = screen !== "home";
+  $("#chat").hidden = screen !== "chat";
+  $("#scrLoan").hidden = screen !== "loan";
+  $("#composer").hidden = screen !== "chat";
+  if (screen === "chat") seenOut[m.id] = maxOutId();
+  $("#msgDot").hidden = screen === "chat" || maxOutId() <= (seenOut[m.id] ?? 0);
+  $("#sizerSum").innerHTML = tt("new_loan");
+  renderHome(); renderChat(); renderLoan(); renderComposer(); renderQuick();
+}
+
+function renderHome() {
+  const m = S.merchant, c = m.case, last = m.recent[m.recent.length - 1], next = m.upcoming[0];
+  const first = m.lang === "kn" || m.lang === "hi" ? (m.first_local || m.first) : m.first;
+  let alert = "";
+  if (c) {
+    const sent = c.messages.some(x => x.dir === "out" && x.status === "sent");
+    const paused = m.upcoming.filter(u => u.paused);
+    if (c.state === "offered" || (c.state === "waiting" && sent)) {
+      alert = `<button class="h-alert info" data-go="chat"><span class="ic">💬</span><span>${tt("msg_waiting")}</span></button>`;
+    } else if (c.state === "accepted" && paused.length) {
+      const span = paused.length > 1 ? `${lday(paused[0].date)} – ${lday(paused[paused.length - 1].date)}` : lday(paused[0].date);
+      alert = `<button class="h-alert good" data-go="loan"><span class="ic">⏸</span><span><b>${tt("pause_on")}</b><span ${langAttr(m.lang)}>${esc(span)}</span></span></button>`;
+    } else if (c.state === "recovered") {
+      alert = `<div class="h-alert good"><span class="ic">🌱</span><span>${tt("recovered")}</span></div>`;
+    } else if (c.human && ["with_person", "review", "grievance"].includes(c.state)) {
+      alert = `<div class="h-alert person"><span class="ic">📞</span><span>${tt("person_call")}</span></div>`;
+    }
+  }
+  const lastCard = last ? `<div class="h-card h-last"><h4>${tt("last_day")} · <span ${langAttr(m.lang)}>${esc(ldate(last.date))}</span></h4>
+      <div class="h-row"><span class="lbl">${tt("sales")}</span><span class="h-big">${inr(last.sales)}</span></div>
+      <div class="h-row"><span class="lbl">${tt("deducted")}</span><span class="h-big ${last.paused ? "zero" : ""}">${last.paused ? `<span ${langAttr(m.lang)}>${esc(t("paused"))}</span>` : inr(last.deducted)}</span></div></div>` : "";
+  let nextVal = next.paused ? `<span ${langAttr(m.lang)}>${esc(t("paused"))}</span>` : inr(next.due);
+  let nextNote = next.paused ? "" : next.arrears ? `${t("pending")} ${inr(next.arrears)}` : next.catchup ? `${inr(next.installment)} + ${inr(next.catchup)} ${t("catchup")}` : "";
+  const nextCard = `<div class="h-card h-next"><h4>${tt("next_ded")} · <span ${langAttr(m.lang)}>${esc(ldate(next.date))}</span></h4>
+      <div class="h-row"><span class="h-big ${next.paused ? "zero" : ""}">${nextVal}</span></div>${nextNote ? `<div class="h-note" ${langAttr(m.lang)}>${esc(nextNote)}</div>` : ""}</div>`;
+  const acts = [["closure", "tell_closure", "🗓️"], ["ask", "ask_loan", "❓"], ["person", "talk_person", "📞"]]
+    .map(([k, label, ic]) => `<button class="h-act ${k}" data-act="${k}"><span class="ic">${ic}</span><span>${tt(label)}</span></button>`).join("");
+  $("#scrHome").innerHTML = `<div class="h-greet" ${langAttr(m.lang)}>${esc(t("hello"))}, ${esc(first)}</div>${alert}${lastCard}${nextCard}<div class="h-acts">${acts}</div>`;
+  $$("[data-go]", $("#scrHome")).forEach(b => (b.onclick = () => setScreen(b.dataset.go)));
+  $$("[data-act]", $("#scrHome")).forEach(b => (b.onclick = () => homeAction(b.dataset.act)));
+}
+
+function homeAction(k) {
+  if (k === "closure") { screen = "chat"; reasonMode = true; renderPhone(); return; }
+  sendInbound(S.quick[k === "ask" ? "ask" : "person"][ML()], "tap");
+}
+
+function renderChat() {
+  const m = S.merchant, c = m.case, showEn = $("#enToggle").checked;
   const chat = $("#chat");
   const atBottom = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 60;
-  let html = settleCard(m);
-  const c = m.case;
+  let html = "";
   if (!c || !c.messages.length) {
-    html += `<p class="empty">${c && !m.consent ? "No messages: this merchant didn't opt in, so a person at the lender will call instead." : "No messages yet. Sambhal stays quiet until it can help."}</p>`;
+    html = `<p class="empty">${!m.consent ? "No messages: this merchant didn't opt in, so a person at the lender will call instead." : tt("no_msgs")}</p>`;
   } else {
     let day = null;
     for (const msg of c.messages) {
-      const t = msg.sent_at || msg.at;
+      const at = msg.sent_at || msg.at;
       if (msg.dir === "out" && msg.status === "held") {
         html += `<div class="sysline hold">⏸ Sambhal has a message ready. Held until ${fmtDayTime(msg.held_until)}: ${esc(HOLD_WHY[msg.held_reason] || msg.held_reason || "contact rules")}.</div>`;
         continue;
@@ -132,7 +248,7 @@ function renderPhone() {
         html += `<div class="sysline block">✕ Not sent: ${esc(why || "blocked by a guardrail")}</div>`;
         continue;
       }
-      const dk = fmtDay(t);
+      const dk = fmtDay(at);
       if (dk !== day) { html += `<div class="daysep">${dk}</div>`; day = dk; }
       if (msg.dir === "out" && msg.held_once) {
         html += `<div class="sysline info">Waited for ${esc(HOLD_WHY[msg.held_reason] || msg.held_reason)}; delivered ${fmtTime(msg.sent_at)}.</div>`;
@@ -142,39 +258,36 @@ function renderPhone() {
   }
   chat.innerHTML = html;
   if (atBottom || busy) chat.scrollTop = chat.scrollHeight;
-  $$(".play", chat).forEach(b => (b.onclick = () => playMsg(+b.dataset.id)));
-  $$(".opt button", chat).forEach(b => (b.onclick = () => acceptOpt(b.dataset.opt)));
-  renderQuick();
+  $$(".vn", chat).forEach(b => (b.onclick = () => playMsg(+b.dataset.id)));
+  $$(".opt button.accept", chat).forEach(b => (b.onclick = () => acceptOpt(b.dataset.opt)));
 }
 
-function settleCard(m) {
-  const rows = m.recent.slice(-3);
-  if (!rows.length) return "";
-  const tr = rows.map(r => {
-    const ratio = r.baseline ? r.sales / r.baseline : 1;
-    const cls = r.sales === 0 ? "zero" : ratio < 0.5 ? "low" : "";
-    const note = r.paused ? `<span class="pz">paused</span>` : r.arrears > 0 ? `<span class="zero">${inr(r.arrears)} due</span>` : inr(r.deducted);
-    return `<tr><td>${r.dow} ${D(r.date).getDate()}</td><td class="${cls}">${inr(r.sales)}</td><td class="${cls}">${pct(ratio)}</td><td>${note}</td></tr>`;
-  }).join("");
-  return `<div class="settle"><h4>Settlements · sales · vs normal · deducted</h4><table>${tr}</table></div>`;
+function wave(id) {
+  let x = id * 9301 + 49297, out = "";
+  for (let i = 0; i < 26; i++) { x = (x * 9301 + 49297) % 233280; out += `<i style="height:${30 + Math.round((x / 233280) * 70)}%"></i>`; }
+  return out;
 }
+function fmtDur(s) { return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
 
 function outBubble(msg, c, showEn) {
   const tag = msg.author === "llm" ? `<span class="tag ai">AI-phrased · checked</span>` : `<span class="tag tpl">Approved template</span>`;
+  const secs = Math.max(4, Math.round(((msg.header || "").length + msg.text.length) / 14));
   let opts = "";
   for (const o of msg.options || []) {
-    const taken = c.accepted === o.id;
-    const can = c.state === "offered" && !c.accepted;
+    const taken = c.accepted === o.id, can = c.state === "offered" && !c.accepted;
+    const pv = (o.preview || []).slice(0, 5).map(p => `<span class="pv-c ${p.kind}"><i ${langAttr(msg.lang)}>${esc(lday(p.date))}</i><b>${p.amount ? inr(p.amount) : "₹0"}</b></span>`).join("");
     opts += `<div class="opt ${taken ? "taken" : ""}"><b ${langAttr(msg.lang)}>${esc(o.label)}</b>${showEn && msg.lang !== "en" ? `<p>${esc(o.label_en)}</p>` : ""}
-      ${taken ? `<b>✓ Accepted</b>` : can ? `<button data-opt="${o.id}" ${langAttr(msg.lang)}>${msg.lang === "kn" ? "ಒಪ್ಪುತ್ತೇನೆ" : msg.lang === "hi" ? "स्वीकार करें" : "Accept"}</button>` : ""}</div>`;
+      ${pv ? `<div class="pv">${pv}</div>` : ""}
+      ${taken ? `<span class="ok">✓ ${tt("accepted")}</span>` : can ? `<button class="accept" data-opt="${o.id}" ${langAttr(msg.lang)}>${esc(t("accept", msg.lang))}</button>` : ""}</div>`;
   }
   return `<div class="bubble out">
+    <button class="vn" data-id="${msg.id}" aria-label="Play voice message"><span class="pl"></span><span class="wave">${wave(msg.id)}</span><span class="dur">${fmtDur(secs)}</span></button>
     <div class="hdr" ${langAttr(msg.lang)}>${esc(msg.header)}</div>
     <div class="body" ${langAttr(msg.lang)}>${esc(msg.text)}</div>
     ${showEn && msg.lang !== "en" ? `<div class="en">${esc(msg.text_en)}</div>` : ""}
     ${opts}
     <div class="ftr">${esc(msg.footer)}</div>
-    <div class="meta"><span>${fmtTime(msg.sent_at)} · ${tag}</span><button class="play" data-id="${msg.id}">▶ Play</button></div>
+    <div class="meta"><span>${fmtTime(msg.sent_at)} · ${tag}</span></div>
   </div>`;
 }
 
@@ -188,16 +301,54 @@ function inBubble(msg, showEn) {
   </div>`;
 }
 
+function renderComposer() {
+  const c = S.merchant.case, lang = ML();
+  const sent = c && c.messages.some(x => x.dir === "out" && x.status === "sent");
+  const btn = (k, cls = "r-btn") => `<button type="button" class="${cls}" data-q="${k}"><span class="ic">${ICON[k]}</span><span>${tt(k)}</span></button>`;
+  let html = "";
+  if (c && c.state === "offered") html = `<div class="r-row">${btn("more")}${btn("person")}</div>`;
+  else if (reasonMode || (c && c.state === "waiting" && sent)) {
+    html = `<p class="r-title">${tt("what_happened")}</p><div class="r-grid">${["family", "illness", "closed", "slow", "hospital", "fine"].map(k => btn(k)).join("")}</div>`;
+  }
+  $("#reasons").innerHTML = html;
+  $$("[data-q]", $("#reasons")).forEach(b => (b.onclick = () => { reasonMode = false; sendInbound(S.quick[b.dataset.q][lang], "tap"); }));
+  $("#micLabel").innerHTML = `<span ${langAttr(lang)}>${esc(t((rec && rec.state === "recording") || recog ? "stop_rec" : "tap_speak"))}</span>`;
+  $("#msgInput").placeholder = t("type_here");
+}
+
+function renderLoan() {
+  const m = S.merchant, Lo = m.loan;
+  const paid = Lo.total ? Lo.collected / Lo.total : 0;
+  const past = m.recent.slice(-7).map(r => {
+    const cls = r.paused ? "pz" : r.arrears > 0 ? "od" : "ok";
+    const val = r.paused ? t("paused") : r.arrears > 0 ? inr(r.arrears) : inr(r.deducted);
+    return `<div class="cal-c ${cls}"><i ${langAttr(m.lang)}>${esc(ldate(r.date, { weekday: "short" }))}</i><b>${D(r.date).getDate()}</b><em ${langAttr(m.lang)}>${esc(val)}</em></div>`;
+  }).join("");
+  const fut = m.upcoming.slice(0, 7).map((u, i) => {
+    const cls = (u.paused ? "pz" : u.catchup ? "cu" : "up") + (i === 0 ? " today" : "");
+    const val = u.paused ? t("paused") : inr(u.due);
+    return `<div class="cal-c ${cls}"><i ${langAttr(m.lang)}>${esc(ldate(u.date, { weekday: "short" }))}</i><b>${D(u.date).getDate()}</b><em ${langAttr(m.lang)}>${esc(val)}</em></div>`;
+  }).join("");
+  const lg = ["ok", "pz", "od", "cu"].map(k => `<span class="l-${k}" ${langAttr(m.lang)}>${esc(t("l_" + k))}</span>`).join("");
+  $("#loanOut").innerHTML = `
+    <div class="h-card ln-sum"><h4>${tt("outstanding")}</h4><div class="h-big">${inr(Lo.outstanding)}</div>
+      <div class="ln-bar"><i style="width:${(paid * 100).toFixed(1)}%"></i></div>
+      <div class="ln-kv"><span>${tt("daily")}</span><b>${inr(Lo.installment)}</b><span>${tt("paid")}</span><b>${inr(Lo.collected)} · ${pct(paid)}</b><span>${tt("ends")}</span><b ${langAttr(m.lang)}>${esc(ldate(m.ends_on, { day: "numeric", month: "short", year: "numeric" }))}</b></div></div>
+    <div class="h-card"><h4>${tt("last7")}</h4><div class="cal">${past}</div></div>
+    <div class="h-card"><h4>${tt("next7")}</h4><div class="cal">${fut}</div><div class="cal-lg">${lg}</div></div>`;
+}
+
 function renderQuick() {
   const q = $("#quick"); q.innerHTML = "";
   const c = S.merchant.case;
   const canReply = c && ["waiting", "offered", "declined"].includes(c.state);
   if (!canReply) return;
   const lines = [];
-  if (focus === "M01" && !c.messages.some(m => m.dir === "in")) lines.push({ text: RAVI_LINE, label: `🎙 ${RAVI_LINE}`, main: true });
-  if (c.state === "offered") lines.push({ text: S.merchant.lang === "kn" ? "ಸರಿ, ಒಪ್ಪುತ್ತೇನೆ" : S.merchant.lang === "hi" ? "हाँ, ठीक है" : "Yes, okay", label: "Says yes" });
+  if (focus === "M01" && !c.messages.some(m => m.dir === "in")) lines.push({ text: RAVI_LINE, label: `🎙 Ravi: ${RAVI_LINE}`, main: true });
+  if (c.state === "offered") lines.push({ text: ML() === "kn" ? "ಸರಿ, ಒಪ್ಪುತ್ತೇನೆ" : ML() === "hi" ? "हाँ, ठीक है" : "Yes, okay", label: "Says yes" });
+  if (c.state === "offered") lines.push({ text: "ok but why only 3 days?", label: "“Why only 3 days?”" });
   TRY_LINES.forEach(l => lines.push(l));
-  for (const l of lines.slice(0, 4)) {
+  for (const l of lines.slice(0, 5)) {
     const b = document.createElement("button");
     b.type = "button"; b.textContent = l.label; b.title = l.text;
     if (/[ಀ-೿]/.test(l.label)) b.lang = "kn";
@@ -325,7 +476,17 @@ async function renderWeek() {
       <td class="n">${r.settled ? inr(r.sales) : "—"}</td><td class="n">${r.settled && r.baseline ? pct(r.sales / r.baseline) : "—"}</td>
       <td class="n">${r.settled ? inr(r.with.deducted) : "—"}</td><td>${r.settled ? (r.with.paused ? "paused" : r.with.arrears ? `${inr(r.with.arrears)} overdue` : r.with.catchup ? `incl. ${inr(r.with.catchup)} catch-up` : "") : ""}</td>
       <td class="n">${r.settled ? inr(r.without.deducted) : "—"}</td><td>${r.settled && r.without.arrears ? `${inr(r.without.arrears)} overdue · ${r.without.dpd}d` : ""}</td></tr>`).join("");
-  el.innerHTML = `<div class="week">
+  const plural = n => `${n} day${n === 1 ? "" : "s"}`;
+  const payoff = woMax.without.deducted > woMax.with.deducted ? `<div>
+      <p class="po-head">${fmtDay(woMax.date)}: the day the backlog lands <span>· same sales, same day</span></p>
+      <div class="payoff">
+        <div class="po wo"><span class="k">Without Sambhal</span><span class="v">${inr(woMax.without.deducted)}</span>
+          <span class="s">${pct(shareWo)} of the day's sales, taken in one go</span><span class="s">${plural(odWo)} overdue on the record</span></div>
+        <div class="po-arrow">→</div>
+        <div class="po w"><span class="k">With Sambhal</span><span class="v">${inr(woMax.with.deducted)}</span>
+          <span class="s">${pct(shareW)} of the day's sales</span><span class="s">${odW ? `${plural(odW)} overdue` : "Never overdue"}</span></div>
+      </div></div>` : "";
+  el.innerHTML = `<div class="week">${payoff}
     <div class="week-kpis">
       <div class="wk"><span>Biggest single deduction</span><div class="pair"><b class="a">${inr(withMax.with.deducted)}</b><b class="b">${inr(woMax.without.deducted)}</b></div></div>
       <div class="wk"><span>Share of that day's sales (${woMax.dow})</span><div class="pair"><b class="a">${pct(shareW)}</b><b class="b">${pct(shareWo)}</b></div></div>
@@ -398,12 +559,40 @@ function goStep(n) {
     if (n < prevStep) lastSpoken = Infinity;
     S = await post("/api/step", { n }); focus = "M01";
     if (lastSpoken === Infinity) lastSpoken = maxOutId();
-    render(); autoSpeak();
+    render(); await applyStep(); autoSpeak();
   });
+}
+const SPOT = {
+  home: ["#phone"], settle: ["#scrHome .h-last"], guard: ["#caseDetail .checks"], voice: ["#chat .vn", true],
+  reading: ["#caseDetail .reading"], calendar: ["#scrLoan .cal", true], week: ["#tab-week .chartwrap"],
+  payoff: ["#tab-week .payoff"], audit: ["#tab-audit .tablewrap"],
+};
+async function applyStep() {
+  const st = S.steps[S.step];
+  if (st.phone) { screen = st.phone; reasonMode = false; renderPhone(); }
+  if (st.tab === "audit") $("#auditFocus").checked = true;
+  if (st.tab) await setTab(st.tab);
+  if (st.spot && SPOT[st.spot]) spot(...SPOT[st.spot]);
+}
+function spot(sel, last = false) {
+  const els = $$(sel), el = last ? els[els.length - 1] : els[0];
+  if (!el) return;
+  el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  el.classList.remove("spot"); void el.offsetWidth; el.classList.add("spot");
+  setTimeout(() => el.classList.remove("spot"), 2700);
+}
+async function setTab(name) {
+  tab = name;
+  $$(".tabs button").forEach(x => x.classList.toggle("on", x.dataset.tab === name));
+  ["cases", "week", "proof", "audit"].forEach(t2 => ($(`#tab-${t2}`).hidden = t2 !== name));
+  if (name === "week") await renderWeek();
+  if (name === "audit") await renderAudit();
+  if (name === "proof" && !proofLoaded) { proofLoaded = true; runEvals(); runReplay(); }
 }
 function sendInbound(text, via = "text") {
   return act(async () => {
     S = await post("/api/inbound", { merchant_id: focus, text, via });
+    screen = "chat";
     $("#msgInput").value = ""; render(); autoSpeak();
   });
 }
@@ -425,7 +614,7 @@ function autoSpeak() {
 let audioEl = null;
 async function playMsg(id) {
   const c = S.merchant.case; const msg = c && c.messages.find(m => m.id === id); if (!msg) return;
-  const btn = $(`.play[data-id="${id}"]`);
+  const btn = $(`.vn[data-id="${id}"]`);
   if (audioEl) { audioEl.pause(); audioEl = null; }
   speechSynthesis.cancel();
   const text = `${msg.header}. ${msg.text}`;
@@ -460,8 +649,8 @@ async function toggleMic() {
     mic.classList.add("rec"); note.hidden = false; note.textContent = "Listening (browser speech)… click again to stop";
     recog.onresult = e => { const t = e.results[0][0].transcript; note.textContent = `Heard: ${t}`; sendInbound(t, "voice"); };
     recog.onerror = e => { note.textContent = `Browser speech failed (${e.error}). Type the reply instead.`; };
-    recog.onend = () => { mic.classList.remove("rec"); recog = null; };
-    recog.start(); return;
+    recog.onend = () => { mic.classList.remove("rec"); recog = null; renderComposer(); };
+    recog.start(); renderComposer(); return;
   }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -469,7 +658,7 @@ async function toggleMic() {
     rec = new MediaRecorder(stream, type ? { mimeType: type } : undefined); chunks = [];
     rec.ondataavailable = e => e.data.size && chunks.push(e.data);
     rec.onstop = async () => {
-      stream.getTracks().forEach(t => t.stop()); mic.classList.remove("rec");
+      stream.getTracks().forEach(t => t.stop()); mic.classList.remove("rec"); renderComposer();
       const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
       note.textContent = "Transcribing with Sarvam…";
       const fd = new FormData(); fd.append("file", blob, "reply.webm"); fd.append("lang", lang);
@@ -481,7 +670,7 @@ async function toggleMic() {
         await sendInbound(j.transcript, "voice");
       } catch (e) { note.textContent = `Couldn't transcribe: ${e.message}. Type the reply or use a quick reply.`; }
     };
-    rec.start(); mic.classList.add("rec"); note.hidden = false; note.textContent = "Recording… click the mic again to stop";
+    rec.start(); mic.classList.add("rec"); renderComposer(); note.hidden = false; note.textContent = "Recording… tap the mic again to stop";
   } catch (e) { note.hidden = false; note.textContent = `Microphone not available: ${e.message}`; }
 }
 
@@ -517,23 +706,24 @@ function wire() {
   $("#btnReplay").onclick = runReplay;
   $("#szAmount").oninput = () => { $("#szAmountOut").textContent = inr(+$("#szAmount").value); clearTimeout(szTimer); szTimer = setTimeout(runSizer, 150); };
   $("#szTenure").onchange = runSizer;
-  $$(".tabs button").forEach(b => (b.onclick = () => {
-    tab = b.dataset.tab;
-    $$(".tabs button").forEach(x => x.classList.toggle("on", x === b));
-    ["cases", "week", "proof", "audit"].forEach(t => ($(`#tab-${t}`).hidden = t !== tab));
-    if (tab === "week") renderWeek();
-    if (tab === "audit") renderAudit();
-    if (tab === "proof" && !proofLoaded) { proofLoaded = true; runEvals(); runReplay(); }
-  }));
-  $$(".ph-tabs button").forEach(b => (b.onclick = () => {
-    ptab = b.dataset.ptab;
-    $$(".ph-tabs button").forEach(x => x.classList.toggle("on", x === b));
-    $("#chat").hidden = ptab !== "chat"; $("#sizerPane").hidden = ptab !== "sizer";
-    $("#composer").hidden = ptab !== "chat";
-    if (ptab === "sizer") runSizer();
-  }));
+  $$(".tabs button").forEach(b => (b.onclick = () => setTab(b.dataset.tab)));
+  $$(".ph-nav button").forEach(b => (b.onclick = () => setScreen(b.dataset.scr)));
+  $("#sizerBox").ontoggle = () => { if ($("#sizerBox").open) runSizer(); };
+  const big = (() => { try { return localStorage.getItem("sambhal.big") === "1"; } catch (_) { return false; } })();
+  $("#bigToggle").checked = big; document.body.classList.toggle("big", big);
+  $("#bigToggle").onchange = e => {
+    document.body.classList.toggle("big", e.target.checked);
+    try { localStorage.setItem("sambhal.big", e.target.checked ? "1" : "0"); } catch (_) { /* private mode */ }
+  };
+  const closeWelcome = () => { $("#welcome").hidden = true; try { localStorage.setItem("sambhal.welcomed", "1"); } catch (_) { /* private mode */ } };
+  $("#btnAbout").onclick = () => ($("#welcome").hidden = false);
+  $("#wExplore").onclick = closeWelcome;
+  $("#wStart").onclick = () => { closeWelcome(); goStep(0); };
+  $("#welcome").onclick = e => { if (e.target.id === "welcome") closeWelcome(); };
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#welcome").hidden) closeWelcome(); });
+  try { if (localStorage.getItem("sambhal.welcomed") !== "1") $("#welcome").hidden = false; } catch (_) { $("#welcome").hidden = false; }
   document.addEventListener("keydown", e => {
-    if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+    if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName) || !$("#welcome").hidden) return;
     if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); if (S.step < S.steps.length - 1) goStep(S.step + 1); }
     if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); if (S.step > 0) goStep(S.step - 1); }
   });

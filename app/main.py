@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import config, evals, llm, presenter, replay, sizer, voice
+from . import config, evals, llm, presenter, replay, replies, sizer, voice
 from .data import money
 from .world import World
 
@@ -61,7 +61,7 @@ def snapshot(focus: Optional[str] = None) -> dict:
         "focus": focus, "merchant": W.merchant_view(focus), "cases": [case_summary(c) for c in cases],
         "counts": {"merchants": len(W.merchants), "cases": len(cases), "by_state": states,
                    "with_person": sum(1 for c in cases if c.human), "held": len(W.outbox)},
-        "audit_count": len(W.audit_log),
+        "audit_count": len(W.audit_log), "quick": replies.QUICK_REPLIES,
     }
 
 

@@ -156,6 +156,13 @@ T: dict[str, dict[str, str]] = {
         "hi": "माफ़ कीजिए, मैं समझ नहीं पाया। क्या दुकान बंद है, या धंधा कम है? आप आवाज़ में भी जवाब दे सकते हैं।",
         "kn": "ಕ್ಷಮಿಸಿ, ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ಅಂಗಡಿ ಮುಚ್ಚಿದೆಯಾ, ಅಥವಾ ವ್ಯಾಪಾರ ಕಡಿಮೆಯಾ? ನೀವು ಧ್ವನಿಯಲ್ಲೂ ಉತ್ತರಿಸಬಹುದು.",
     },
+    "human_ack": {
+        "en": "Sure. I've asked a person from {lender} to call you. They call only between 8 am and 7 pm.",
+        "hi": "ज़रूर। मैंने {lender} के एक व्यक्ति से आपको कॉल करने को कहा है। वे सिर्फ़ सुबह 8 से शाम 7 बजे के बीच कॉल "
+              "करते हैं।",
+        "kn": "ಖಂಡಿತ. {lender} ನ ಒಬ್ಬರು ನಿಮಗೆ ಕರೆ ಮಾಡುವಂತೆ ಕೇಳಿದ್ದೇನೆ. ಅವರು ಬೆಳಿಗ್ಗೆ 8 ರಿಂದ ಸಂಜೆ 7 ರ ನಡುವೆ ಮಾತ್ರ ಕರೆ "
+              "ಮಾಡುತ್ತಾರೆ.",
+    },
     "ask_reason_help": {
         "en": "We can help. To find the right option, tell us: is the shop closed, or is business slow? You can reply "
               "by voice.",
@@ -205,6 +212,27 @@ T: dict[str, dict[str, str]] = {
               "ಮುಕ್ತಾಯಗೊಳಿಸುತ್ತಿದ್ದೇವೆ. ಸಹಾಯ ಬೇಕಿದ್ದರೆ ಯಾವಾಗ ಬೇಕಾದರೂ ಉತ್ತರಿಸಿ.",
     },
 }
+
+
+# One-tap replies on the merchant's phone. Each is a plain sentence the reader understands (tested), so a tap
+# goes through exactly the same path as a spoken or typed reply.
+QUICK_REPLIES = {
+    "family": {"kn": "ಮನೆಯಲ್ಲಿ ಕಾರ್ಯಕ್ರಮ ಇದೆ, ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತೆ", "hi": "घर में समारोह है, दुकान बंद रहेगी",
+               "en": "Family function at home, shop closed"},
+    "illness": {"kn": "ನನಗೆ ಹುಷಾರಿಲ್ಲ", "hi": "मेरी तबीयत खराब है", "en": "I am unwell"},
+    "closed": {"kn": "ಅಂಗಡಿ ಕೆಲವು ದಿನ ಮುಚ್ಚಿದೆ", "hi": "दुकान कुछ दिन बंद है", "en": "Shop is closed for a few days"},
+    "slow": {"kn": "ವ್ಯಾಪಾರ ಕಡಿಮೆ ಇದೆ", "hi": "धंधा कम है", "en": "Business is slow"},
+    "hospital": {"kn": "ಮನೆಯವರು ಆಸ್ಪತ್ರೆಯಲ್ಲಿ ಇದ್ದಾರೆ", "hi": "घर में कोई अस्पताल में भर्ती है",
+                 "en": "Someone in my family is in hospital"},
+    "fine": {"kn": "ಎಲ್ಲಾ ಸರಿ ಇದೆ", "hi": "सब ठीक है", "en": "All fine"},
+    "more": {"kn": "ಇನ್ನೂ ಹೆಚ್ಚು ದಿನ ಬೇಕು", "hi": "और दिन चाहिए", "en": "I need more days"},
+    "ask": {"kn": "ಇನ್ನೂ ಎಷ್ಟು ಬಾಕಿ ಇದೆ?", "hi": "अभी कितना बाकी है?", "en": "How much is left to pay?"},
+    "person": {"kn": "ನಾನು ಒಬ್ಬ ವ್ಯಕ್ತಿಯೊಂದಿಗೆ ಮಾತನಾಡಬೇಕು", "hi": "मुझे किसी व्यक्ति से बात करनी है",
+               "en": "I want to talk to a person"},
+}
+QUICK_INTENT = {"family": "family_event", "illness": "illness", "closed": "temporary_closure", "slow": "business_slow",
+                "hospital": "medical_emergency", "fine": "business_normal", "more": "need_time", "ask": "question",
+                "person": "talk_to_person"}
 
 
 def _fmt_facts(f: dict, lang: str) -> dict:

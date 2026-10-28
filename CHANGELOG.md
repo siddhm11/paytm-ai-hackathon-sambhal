@@ -16,6 +16,11 @@
   the model (it read Friday "till Sunday" as 2 days); background shops' scripted replies use the rules, so
   stepping through the week makes 1 AI call instead of 15; tests never touch the network. 48 demo voice lines
   cached. 83 tests
+- 29 Oct, merchant app and stage flow: the phone is now an app with Home, Messages and My loan screens in the
+  merchant's language; voice-note bubbles; one-tap reasons (each tested to read correctly in kn/hi/en); offers
+  show a day-by-day preview; "talk to a person" always works; 14-day deduction calendar. Each presenter step opens
+  the right screens and highlights what to point at; step 7 has a payoff card; caption bar stays on screen; Big
+  text mode; welcome card. 112 tests
 
 ## On the day (31 Oct 2026)
 - 

@@ -1,6 +1,8 @@
 # Demo cue cards (3 minutes)
 
-Cue points to talk from, not lines to memorise. → advances a step.
+Cue points to talk from, not lines to memorise. → advances a step. Each step opens the right phone screen and
+console panel by itself and briefly highlights what to point at (gold glow), so you never hunt for a tab.
+Tick **Big text** in the header on a projector.
 
 **Before you start:** server running, browser at `localhost:8000`, Reset pressed, volume up, phone hotspot ready.
 Lender console tab open. Check that the header chips say *Voice: Sarvam* (or *cached audio*).
@@ -36,6 +38,6 @@ Lender console tab open. Check that the header chips say *Voice: Sarvam* (or *ca
 | Problem | Do this |
 |---|---|
 | Wifi dies | Flip **Offline** in the header. Rules + templates + cached audio carry the whole story. |
-| Mic doesn't hear | Click the 🎙 chip with Ravi's line. |
+| Mic doesn't hear | Tap the 🎙 Ravi shortcut under the phone (presenter shortcuts). |
 | No sound | Read the English line under the bubble; keep going. |
 | Page stuck | Reset, then click step dot 7 (it replays instantly). |

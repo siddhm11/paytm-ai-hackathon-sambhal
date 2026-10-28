@@ -23,6 +23,8 @@
     <span class="chip" id="chipVoice">Voice</span>
     <span class="chip" id="chipAI">AI</span>
     <label class="toggle" title="Force rules, templates and cached audio (no network)"><input type="checkbox" id="offlineToggle"><span>Offline</span></label>
+    <label class="toggle" title="Larger text for a projector"><input type="checkbox" id="bigToggle"><span>Big text</span></label>
+    <button class="ghost" id="btnAbout" title="What is Sambhal?">About</button>
     <button class="ghost" id="btnClock" title="Advance to the next event">Next event</button>
     <button class="ghost" id="btnReset">Reset</button>
   </div>
@@ -45,36 +47,46 @@
     <div class="phone" id="phone">
       <div class="ph-top">
         <div class="ph-who"><span class="avatar" id="phAvatar">R</span><div><b id="phName">—</b><small id="phShop">—</small></div></div>
-        <label class="toggle small" title="Show English under each message"><input type="checkbox" id="enToggle" checked><span>EN</span></label>
+        <label class="toggle small" title="Show English under each line"><input type="checkbox" id="enToggle" checked><span>EN</span></label>
       </div>
-      <div class="ph-tabs" role="tablist">
-        <button role="tab" class="on" data-ptab="chat">Messages</button>
-        <button role="tab" data-ptab="sizer">Loan check</button>
+      <div class="ph-body" id="scrHome"></div>
+      <div class="ph-body" id="chat" aria-live="polite" hidden></div>
+      <div class="ph-body" id="scrLoan" hidden>
+        <div id="loanOut"></div>
+        <details class="sizer-box" id="sizerBox">
+          <summary id="sizerSum">New loan? Check what fits</summary>
+          <form id="sizerForm" class="sizer-form">
+            <p class="sz-intro">Test the daily installment against your own slowest weeks.</p>
+            <label for="szAmount">Loan amount <output id="szAmountOut">₹2,50,000</output></label>
+            <input type="range" id="szAmount" min="25000" max="400000" step="5000" value="250000">
+            <label for="szTenure">Repay over</label>
+            <select id="szTenure"><option value="90">90 days</option><option value="180" selected>180 days</option><option value="270">270 days</option><option value="365">365 days</option></select>
+          </form>
+          <div id="sizerOut" class="sizer-out"></div>
+        </details>
       </div>
-      <div class="ph-body" id="chat" aria-live="polite"></div>
-      <div class="ph-body" id="sizerPane" hidden>
-        <form id="sizerForm" class="sizer-form">
-          <p class="sz-intro">Before taking a loan: test the daily installment against your own slowest weeks.</p>
-          <label for="szAmount">Loan amount <output id="szAmountOut">₹2,50,000</output></label>
-          <input type="range" id="szAmount" min="25000" max="400000" step="5000" value="250000">
-          <label for="szTenure">Repay over</label>
-          <select id="szTenure"><option value="90">90 days</option><option value="180" selected>180 days</option><option value="270">270 days</option><option value="365">365 days</option></select>
-        </form>
-        <div id="sizerOut" class="sizer-out"></div>
-      </div>
-      <div class="composer" id="composer">
-        <div class="quick" id="quick"></div>
+      <div class="composer" id="composer" hidden>
+        <div class="reasons" id="reasons"></div>
         <form id="sendForm" class="send-row">
-          <button type="button" class="mic" id="btnMic" title="Hold to speak, or click to start and stop" aria-label="Record voice reply">
+          <button type="button" class="mic" id="btnMic" aria-label="Record a voice reply">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-2.1A7 7 0 0 0 19 12h-2Z"/></svg>
+            <span id="micLabel">Tap to speak</span>
           </button>
-          <input id="msgInput" autocomplete="off" placeholder="Reply as the merchant…" aria-label="Merchant reply">
+          <input id="msgInput" autocomplete="off" placeholder="Type a reply…" aria-label="Merchant reply">
           <button class="send" id="btnSend" aria-label="Send">➤</button>
         </form>
         <div class="rec-note" id="recNote" hidden></div>
       </div>
+      <nav class="ph-nav" aria-label="Merchant app">
+        <button type="button" data-scr="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 10.5V21h6.5v-6h5v6H21V10.5Z"/></svg><span></span></button>
+        <button type="button" data-scr="chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9l-5 4v-4H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/></svg><span></span><i class="dot" id="msgDot" hidden></i></button>
+        <button type="button" data-scr="loan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm1 5v10h12V9Zm2 2h3v3H8Zm5 0h3v3h-3Z"/></svg><span></span></button>
+      </nav>
     </div>
-    <p class="phone-note">The merchant's phone (simulated)</p>
+    <div class="try">
+      <p>Presenter shortcuts <small>· not part of the app</small></p>
+      <div class="quick" id="quick"></div>
+    </div>
   </section>
 
   <section class="console">
@@ -117,6 +129,20 @@
     </div>
   </section>
 </main>
+<div class="welcome" id="welcome" hidden>
+  <div class="w-card" role="dialog" aria-modal="true" aria-labelledby="wTitle">
+    <p class="w-kicker">Prototype · Paytm Build for India · Track 2: AI-powered financial journeys</p>
+    <h2 id="wTitle">Sambhal <span lang="kn">ಸಂಭಲ್</span></h2>
+    <p class="w-lead">Paytm merchants repay their loans a little every day, straight from their sales. One bad week (a wedding, an illness, heavy rain) and the unpaid days pile up into one big deduction when the shop reopens.</p>
+    <ul class="w-points">
+      <li><b>Spots it early.</b> Sales below half of normal two days running, before anything is missed.</li>
+      <li><b>Talks in the merchant's language.</b> Kannada, Hindi or English, by voice, only between 8 am and 7 pm.</li>
+      <li><b>Offers only what the lender approved.</b> The AI listens and talks. Code decides every rupee and every hour.</li>
+    </ul>
+    <p class="w-how">Left: the merchant's phone. Right: the lender's console. Press <b>Next ▶</b> or the → key to walk through Ravi's week. All merchants and sales are synthetic.</p>
+    <div class="w-btns"><button class="primary" id="wStart">Start Ravi's week ▶</button><button class="ghost" id="wExplore">Explore on my own</button></div>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="/static/app.js"></script>
 </body>

@@ -15,7 +15,8 @@ from datetime import date, timedelta
 
 from . import llm
 
-INTENTS = ["bereavement", "medical_emergency", "stop_contact", "dispute", "request_waiver", "family_event",
+INTENTS = ["bereavement", "medical_emergency", "stop_contact", "dispute", "talk_to_person", "request_waiver",
+           "family_event",
            "illness", "temporary_closure", "business_slow", "need_time", "business_normal", "decline", "accept",
            "question", "unclear"]
 SAFETY_INTENTS = {"bereavement", "medical_emergency", "stop_contact", "dispute"}
@@ -48,6 +49,12 @@ KEYWORDS: dict[str, list[str]] = {
         "extra deducted", "galat kata", "do baar kata", "pehle hi de diya", "galat katauti",
         "गलत कटौती", "दो बार कटा", "दो बार काटा", "पहले ही दे दिया", "गलत कटा",
         "ಎರಡು ಸಲ ಕಟ್", "ತಪ್ಪಾಗಿ ಕಟ್", "ಈಗಾಗಲೇ ಕಟ್ಟಿದ್ದೇನೆ", "ತಪ್ಪು ಕಡಿತ",
+    ],
+    "talk_to_person": [
+        "talk to a person", "talk to someone", "speak to someone", "speak to a person", "real person", "human",
+        "call me", "please call", "kisi se baat", "baat karni hai", "insaan se", "phone kariye", "call kariye",
+        "किसी से बात", "बात करनी है", "व्यक्ति से बात", "कॉल कीजिए", "फ़ोन कीजिए", "फोन कीजिए",
+        "ವ್ಯಕ್ತಿಯೊಂದಿಗೆ ಮಾತನಾಡ", "ಯಾರಾದರೂ ಕರೆ ಮಾಡಿ", "ಮಾತನಾಡಬೇಕು", "ಕರೆ ಮಾಡಿ",
     ],
     "request_waiver": [
         "waive", "waiver", "forgive", "reduce interest", "reduce the interest", "cancel the loan", "write off",
@@ -200,7 +207,7 @@ Return JSON only: {"intent": one of %s,
 Definitions: bereavement = a death; medical_emergency = hospital/ICU/accident/surgery; illness = fever/unwell, not \
 hospital; family_event = wedding/function/ceremony at home; temporary_closure = shop shut for repair/travel; \
 business_slow = fewer customers/sales; business_normal = says everything is fine; request_waiver = asks to waive \
-or cut dues/interest; need_time = asks for more time or more days (including "why only N days?"), or to pay \
+or cut dues/interest; talk_to_person = asks to speak to a human or to be called; need_time = asks for more time or more days (including "why only N days?"), or to pay \
 later, without giving a reason; \
 dispute = says a deduction is wrong or already paid; stop_contact = asks us to stop messaging; accept/decline = \
 answering an offer (a question or a "but" is not an accept); question = asks how much is left to repay or what \

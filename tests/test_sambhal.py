@@ -5,7 +5,7 @@ from datetime import date, datetime
 
 import pytest
 
-from app import config, evals, guardrails, llm, nlu, policy, replay, voice
+from app import config, evals, guardrails, llm, nlu, policy, replay, replies, voice
 from app.presenter import go_to
 from app.world import RAVI_REPLY, World
 
@@ -249,3 +249,29 @@ def test_thinking_off_is_sent_as_null_with_both_headers(monkeypatch):
     assert "reasoning_effort" in seen["body"] and seen["body"]["reasoning_effort"] is None
     assert seen["headers"]["api-subscription-key"] == "sk_test"
     assert seen["headers"]["Authorization"] == "Bearer sk_test"
+
+
+# ---------------------------------------------------------------- one-tap replies on the merchant's phone
+@pytest.mark.parametrize("key", list(replies.QUICK_REPLIES))
+@pytest.mark.parametrize("lang", ["kn", "hi", "en"])
+def test_one_tap_replies_read_correctly(key, lang):
+    text = replies.QUICK_REPLIES[key][lang]
+    assert nlu.read_rules(text, lang, date(2026, 10, 23))["intent"] == replies.QUICK_INTENT[key]
+
+
+def test_talk_to_a_person_keeps_the_offer_open():
+    w = World(use_llm=False)
+    go_to(w, 4)
+    w.inbound("M01", replies.QUICK_REPLIES["person"]["kn"])
+    c = w.case_for("M01")
+    assert c.human and c.state == "offered" and c.messages[-1].kind == "human_ack"
+
+
+def test_offer_preview_and_upcoming_calendar():
+    w = World(use_llm=False)
+    go_to(w, 4)
+    prev = w.case_for("M01").cards[0]["preview"]
+    assert [p["amount"] for p in prev[:4]] == [0, 0, 0, 1032] and prev[0]["kind"] == "paused"
+    go_to(w, 5)
+    up = w.merchant_view("M01")["upcoming"]
+    assert [u["paused"] for u in up[:3]] == [True, True, True] and up[3]["due"] == 1032

@@ -6,29 +6,34 @@ from datetime import datetime
 from .world import RAVI_REPLY, World
 
 STEPS = [
-    {"at": "2026-10-21T10:00", "title": "Meet Ravi",
+    {"at": "2026-10-21T10:00", "title": "Meet Ravi", "phone": "home", "tab": "cases", "spot": "home",
      "caption": "Ravi runs a kirana in Basavanagudi. ₹1,36,000 loan; ₹850 is deducted from his sales every evening. "
                 "71 installments in a row, never missed one."},
-    {"at": "2026-10-21T21:05", "title": "Wednesday: one slow day",
+    {"at": "2026-10-21T21:05", "title": "Wednesday: one slow day", "phone": "home", "tab": "cases", "spot": "settle",
      "caption": "Sales are 48% of a normal Wednesday. One slow day isn't a pattern, so Sambhal only watches."},
-    {"at": "2026-10-22T21:05", "title": "Thursday 9 pm: flagged, and held",
+    {"at": "2026-10-22T21:05", "title": "Thursday 9 pm: flagged, and held", "phone": "chat", "tab": "cases",
+     "spot": "guard",
      "caption": "A second day below half (31%). Sambhal opens a case before anything is missed. It's 9 pm, outside "
                 "RBI's 8 am–7 pm window, so the message waits."},
-    {"at": "2026-10-23T08:00", "title": "Friday 8 am: Sambhal checks in",
+    {"at": "2026-10-23T08:00", "title": "Friday 8 am: Sambhal checks in", "phone": "chat", "tab": "cases",
+     "spot": "voice",
      "caption": "In Kannada, by voice and text, with a recording notice and the grievance officer's details. "
                 "It offers help, not a demand."},
-    {"at": "2026-10-23T08:20", "title": "Ravi replies by voice", "action": "ravi_reply",
+    {"at": "2026-10-23T08:20", "title": "Ravi replies by voice", "action": "ravi_reply", "phone": "chat",
+     "tab": "cases", "spot": "reading",
      "caption": "“ಮನೆಯಲ್ಲಿ ಮದುವೆ ಇದೆ, ಭಾನುವಾರದವರೆಗೆ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತೆ.” There's a wedding at home; the shop is shut "
                 "till Sunday. Sambhal offers only what the lender pre-approved."},
-    {"at": "2026-10-23T08:22", "title": "Ravi taps Accept", "action": "ravi_accept",
+    {"at": "2026-10-23T08:22", "title": "Ravi taps Accept", "action": "ravi_accept", "phone": "loan", "tab": "cases",
+     "spot": "calendar",
      "caption": "The pause is written into the deduction calendar by code. Sambhal goes quiet until Monday, as RBI "
                 "asks around family functions."},
-    {"at": "2026-10-25T21:05", "title": "The weekend: shop shut",
+    {"at": "2026-10-25T21:05", "title": "The weekend: shop shut", "phone": "loan", "tab": "week", "spot": "week",
      "caption": "No sales, no deduction, nothing overdue, no messages."},
-    {"at": "2026-10-26T21:05", "title": "Monday: back to business",
+    {"at": "2026-10-26T21:05", "title": "Monday: back to business", "phone": "home", "tab": "week",
+     "spot": "payoff",
      "caption": "₹1,032 deducted: 17% of the day's sales. Without Sambhal: ₹3,400 (57%) in one sweep, after three "
                 "days overdue."},
-    {"at": "2026-10-27T08:00", "title": "Tuesday 8 am: case closed",
+    {"at": "2026-10-27T08:00", "title": "Tuesday 8 am: case closed", "phone": "chat", "tab": "audit", "spot": "audit",
      "caption": "Sambhal confirms the recovery and closes the case. Every decision is in the lender's audit log."},
 ]
 

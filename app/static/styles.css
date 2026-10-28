@@ -475,6 +475,12 @@ body.big .po .v { font-size: 48px; }
 body.big .mcard .spark-box { display: none; }
 body.big .mcard { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
 
+/* the merchant's app on its own (?phone=1), for screenshots */
+body.phone-only { background: #e9eef3; }
+body.phone-only .top, body.phone-only .story, body.phone-only .console, body.phone-only .try { display: none; }
+body.phone-only .stage { grid-template-columns: 1fr; padding: 14px; }
+body.phone-only .phone-col { position: static; height: auto; min-height: 0; max-width: 400px; margin: 0 auto; width: 100%; }
+body.phone-only .phone { height: calc(100vh - 28px); max-height: none; flex: none; }
 @media (max-width: 1180px) {
   .mcard { grid-template-columns: 1fr 1fr; }
   .mcard .spark-box { grid-column: 1 / -1; }

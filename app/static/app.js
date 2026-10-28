@@ -942,5 +942,22 @@ function wire() {
   if ("speechSynthesis" in window) speechSynthesis.getVoices();
 }
 
+// Deep links, for screenshots and sharing a moment of the demo:
+//   ?step=7&tab=week   ?step=9&focus=M01&screen=home   ?sheet=promise|plan   ?phone=1 (the app alone)   ?welcome=0
+async function deepLink() {
+  const q = new URLSearchParams(location.search);
+  if (![...q.keys()].length) return;
+  if (q.get("phone") === "1") document.body.classList.add("phone-only");
+  if (q.get("welcome") === "0" || q.get("phone") === "1") $("#welcome").hidden = true;
+  if (q.has("step")) await goStep(+q.get("step"));
+  if (q.has("focus")) await load(q.get("focus"));
+  if (q.has("screen")) setScreen(q.get("screen"));
+  if (q.has("wi")) wiChanges = Object.fromEntries(q.get("wi").split(",").map(kv => kv.split("=")).map(([k, v]) => [k, +v]));
+  if (q.has("tab")) await setTab(q.get("tab"));
+  if (q.get("sheet") === "promise") openPromise();
+  if (q.get("sheet") === "plan") openPlanner();
+  if (q.has("scroll")) $(`#${q.get("scroll")}`)?.scrollIntoView({ block: "start" });
+}
+
 wire();
-load().catch(e => toast(`Can't reach the server: ${e.message}`, 8000));
+load().then(deepLink).catch(e => toast(`Can't reach the server: ${e.message}`, 8000));

@@ -36,8 +36,8 @@ def _openai_style(system: str, user: str, json_mode: bool) -> str:
         headers["api-subscription-key"] = config.LLM_API_KEY
     body = {"model": config.LLM_MODEL, "temperature": 0.2, "max_tokens": MAX_TOKENS,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
-    if config.LLM_REASONING_EFFORT:
-        body["reasoning_effort"] = config.LLM_REASONING_EFFORT
+    if config.LLM_REASONING_EFFORT:      # "none" is sent as null, which turns thinking off
+        body["reasoning_effort"] = None if config.LLM_REASONING_EFFORT == "none" else config.LLM_REASONING_EFFORT
     if json_mode:
         body["response_format"] = {"type": "json_object"}
     url = config.LLM_BASE_URL.rstrip("/") + "/chat/completions"

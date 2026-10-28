@@ -218,3 +218,34 @@ def test_bare_no_to_a_checkin_asks_why():
     go_to(w, 3)                                     # check-in asked "Is everything okay?"
     w.inbound("M01", "no")
     assert w.case_for("M01").messages[-1].kind == "ask_reason"
+
+
+# ---------------------------------------------------------------- live-AI behaviour found with a real Sarvam key
+def test_code_decides_days_not_the_model(fake_llm):
+    # sarvam-105b read Friday "till Sunday" as 2 days; a 2-day pause would leave Sunday overdue
+    fake_llm(lambda s, u: {"intent": "family_event", "language": "kn", "event_days": 2, "summary_en": "Wedding."})
+    r = nlu.read(RAVI_REPLY, "kn", date(2026, 10, 23))
+    assert r["source"] == "llm" and r["event_days"] == 3
+
+
+def test_scripted_background_replies_never_wait_on_the_ai(fake_llm):
+    calls = fake_llm(lambda s, u: {"intent": "unclear"})
+    w = World(use_llm=True)
+    go_to(w, 6)                                       # ten background shops reply by Sunday
+    assert sum("Classify" in system for system, _ in calls) == 1     # only Ravi's live reply
+
+
+def test_thinking_off_is_sent_as_null_with_both_headers(monkeypatch):
+    seen = {}
+
+    def fake_post(url, headers, json, timeout):
+        seen.update(headers=headers, body=json)
+        return FakeResp(200, {"choices": [{"message": {"content": "{}"}}]})
+    monkeypatch.setattr(config, "LLM_PROVIDER", "sarvam")
+    monkeypatch.setattr(config, "LLM_API_KEY", "sk_test")
+    monkeypatch.setattr(config, "LLM_REASONING_EFFORT", "none")
+    monkeypatch.setattr(llm.httpx, "post", fake_post)
+    llm._openai_style("system", "user", json_mode=True)
+    assert "reasoning_effort" in seen["body"] and seen["body"]["reasoning_effort"] is None
+    assert seen["headers"]["api-subscription-key"] == "sk_test"
+    assert seen["headers"]["Authorization"] == "Bearer sk_test"

@@ -40,8 +40,10 @@ LLM_BASE_URL = os.getenv(
     {"sarvam": "https://api.sarvam.ai/v1", "openai": "https://api.openai.com/v1",
      "anthropic": "https://api.anthropic.com/v1"}.get(LLM_PROVIDER, ""),
 )
-LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "low" if LLM_PROVIDER == "sarvam" else "")
-LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "20"))
+# Sarvam-105b thinks for ~1,450 tokens (6-9 s) even on "low", and sometimes runs out before answering.
+# "none" switches thinking off: replies in under 1.5 s, and it reads the demo replies correctly.
+LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "none" if LLM_PROVIDER == "sarvam" else "")
+LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "8"))   # on timeout the rules reader answers instead
 LLM_REWRITE = os.getenv("LLM_REWRITE", "0") == "1"   # 1 = LLM may rephrase approved messages (then validated). Off by default for a deterministic stage demo.
 
 # ---- Voice (Sarvam) --------------------------------------------------------

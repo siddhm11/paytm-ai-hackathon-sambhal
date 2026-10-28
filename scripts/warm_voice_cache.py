@@ -18,6 +18,7 @@ from app.world import World  # noqa: E402
 
 TRY_LINES = ["Business is slow because of the rain", "Can you waive the interest?", "ನಮ್ಮ ಅಮ್ಮ ನಿನ್ನೆ ತೀರಿಕೊಂಡರು",
              "ಸರಿ, ಒಪ್ಪುತ್ತೇನೆ"]
+AFTER_OFFER = ["Can I get more days?"]   # asked while Ravi's 3-day pause is on offer
 
 
 def outbound(w: World):
@@ -39,6 +40,11 @@ def collect():
         c = w.case_for("M01")
         if c.state == "offered":
             w.accept("M01", c.offered[0])
+        lines.update({t: l for t, l in outbound(w)})
+    for text in AFTER_OFFER:
+        w = World(use_llm=False)
+        presenter.go_to(w, 4)
+        w.inbound("M01", text)
         lines.update({t: l for t, l in outbound(w)})
     return lines
 

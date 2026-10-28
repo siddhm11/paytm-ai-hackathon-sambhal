@@ -360,7 +360,10 @@ class World:
         if not case or not case.is_open:
             case = self.open_case(mid, None, inbound=True)
         today = self.now.date()
-        reading = nlu.read(text, m.lang, today) if self.use_llm else nlu.read_rules(text, m.lang, today)
+        # Live input (typed or spoken by the presenter) goes to the AI. The background shops' scripted lines are
+        # read by the rules, so stepping through the week never waits on the network.
+        live = self.use_llm and not simulated
+        reading = nlu.read(text, m.lang, today) if live else nlu.read_rules(text, m.lang, today)
         indic = any("\u0900" <= c <= "\u097f" or "\u0c80" <= c <= "\u0cff" for c in text)
         lang = reading["language"] if indic else m.lang
         self.msg_seq += 1

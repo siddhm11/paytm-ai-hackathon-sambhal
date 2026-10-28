@@ -200,10 +200,11 @@ Return JSON only: {"intent": one of %s,
 Definitions: bereavement = a death; medical_emergency = hospital/ICU/accident/surgery; illness = fever/unwell, not \
 hospital; family_event = wedding/function/ceremony at home; temporary_closure = shop shut for repair/travel; \
 business_slow = fewer customers/sales; business_normal = says everything is fine; request_waiver = asks to waive \
-or cut dues/interest; need_time = asks for more time or days, or to pay later, without giving a reason; \
+or cut dues/interest; need_time = asks for more time or more days (including "why only N days?"), or to pay \
+later, without giving a reason; \
 dispute = says a deduction is wrong or already paid; stop_contact = asks us to stop messaging; accept/decline = \
-answering an offer (a question or a "but" is not an accept); question = asks about balance/amounts; unclear = none \
-of these.
+answering an offer (a question or a "but" is not an accept); question = asks how much is left to repay or what \
+an amount is; unclear = none of these.
 If several apply, pick the most serious in this order: %s."""
 
 
@@ -219,7 +220,10 @@ def read(text: str, merchant_lang: str, today: date) -> dict:
             "intent": intent,
             "secondary": res.get("secondary") if res.get("secondary") in HARDSHIP else None,
             "language": res.get("language") if res.get("language") in ("kn", "hi", "en") else rules["language"],
-            "event_days": res.get("event_days") if isinstance(res.get("event_days"), int) else rules["event_days"],
+            # Days are a number, and code decides numbers: the rules' calendar maths wins when it found one
+            # (the model counted Friday "till Sunday" as 2 days; it is 3).
+            "event_days": rules["event_days"] if rules["event_days"] is not None else (
+                res.get("event_days") if isinstance(res.get("event_days"), int) else None),
             "summary_en": res.get("summary_en"), "matched": rules["matched"], "source": "llm",
         }
         # Safety net: keywords may escalate, never de-escalate.

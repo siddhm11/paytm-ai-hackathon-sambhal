@@ -111,7 +111,7 @@ flowchart LR
 | `app/signals.py` | Early-warning rule (amber: 2 days < 50% of normal; red: something overdue) |
 | `app/policy.py` + `data/lender_policy.json` | Lender's relief menu, eligibility, exact terms |
 | `app/guardrails.py` | Contact hours, consent, quiet periods, frequency caps, borrower-only, the AI message check |
-| `app/nlu.py` | Reads replies: LLM when configured, multilingual rules always (rules can only escalate) |
+| `app/nlu.py` | Reads replies: LLM when configured, multilingual rules always (rules can only escalate; day counts come from code) |
 | `app/replies.py` | Approved message templates in Kannada, Hindi, English |
 | `app/world.py` | Simulated clock, cases, the agent's decisions |
 | `app/voice.py` | Sarvam speech-to-text (`saaras:v4`) and text-to-speech (`bulbul:v3`) with an audio cache |
@@ -150,6 +150,8 @@ flowchart LR
 | `SARVAM_API_KEY` | – | Voice, and the default LLM |
 | `LLM_PROVIDER` | `sarvam` if a Sarvam key is set | `sarvam` · `openai` (any OpenAI-compatible URL, e.g. Gemini or Groq) · `anthropic` · `none` |
 | `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL` | per provider | Sarvam: `sarvam-105b`, `https://api.sarvam.ai/v1` |
+| `LLM_REASONING_EFFORT` | `none` for Sarvam | `none` turns off the model's thinking step: replies in ~0.5 s. With `low`, sarvam-105b thought for ~1,450 tokens (6–9 s) and sometimes ran out before answering |
+| `LLM_TIMEOUT` | `8` | Seconds before the rules reader answers instead |
 | `LLM_REWRITE` | `0` | `1` lets the LLM rephrase approved messages (each is checked). Off keeps the stage demo deterministic and the voice cache valid |
 | `TTS_SPEAKER` | `priya` | Any `bulbul:v3` speaker (lowercase) |
 | `OFFLINE` | `0` | `1` = rules, templates and cached audio only |

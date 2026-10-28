@@ -38,7 +38,13 @@ cp .env.example .env                                      # add your Sarvam key 
 python scripts/check_keys.py                              # live Sarvam voice + AI check
 python scripts/warm_voice_cache.py                        # saves every demo line as audio (needs the key once)
 uvicorn app.main:app --port 8000
+python scripts/check_mic.py                               # (app running) end-to-end voice check, then press Reset
 ```
+
+`check_mic.py` plays three Kannada replies, in a different Sarvam voice, into the app as its microphone and presses
+Sambhal's own mic button: browser recording → Sarvam speech-to-text → reader → reply. It caught two bugs the unit
+tests couldn't: Sarvam rejected the browser's `audio/webm;codecs=opus` label (every recording failed), and with
+hint words Sarvam "heard" the word ಕಂತು in silence, which the agent then acted on.
 
 Needs Python 3.10+ (3.9 also works). Open http://localhost:8000. A welcome card explains the screen; **About**
 reopens it. Press **Next ▶** (or the → key) to walk through the story. Each step opens the right screens and
@@ -230,7 +236,8 @@ python scripts/run_evals.py     # human-readable report
 
 * **No sound:** run `python scripts/check_keys.py`. Without a Sarvam key the browser's own voice is used (macOS has
   Kannada and Hindi voices, but they sound robotic).
-* **Mic does nothing:** the browser needs microphone permission for `localhost`. Use Chrome.
+* **Mic does nothing:** the browser needs microphone permission for `localhost`. Use Chrome. Then run
+  `python scripts/check_mic.py` with the app running: it tests the whole voice path without anyone speaking.
 * **LLM slow on stage:** set `OFFLINE=1` or flip the Offline switch. The rules reader handles all demo lines.
 * **Port busy:** `uvicorn app.main:app --port 8010`.
 

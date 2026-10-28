@@ -62,20 +62,17 @@ def stt(audio: bytes, filename: str, mime: str, lang_hint: str | None = None) ->
         raise RuntimeError("voice offline")
     t0 = time.time()
     STATS["stt_calls"] += 1
+    # Browsers label recordings "audio/webm;codecs=opus"; Sarvam accepts "audio/webm" but rejects the codec suffix
+    # (found in an end-to-end mic test: every browser recording got 400 Bad Request).
+    mime = (mime or "audio/webm").split(";")[0].strip()
+    # No 'keyterms' hint list: given silence or noise, Sarvam returned a hint word ("ಕಂತು") as the transcript, and
+    # the agent acted on it. Without hints, silence comes back empty and the app asks the merchant to try again.
     data = {"model": config.STT_MODEL, "language_code": LANG_CODES.get(lang_hint or "", "unknown")}
-    if config.STT_MODEL.startswith("saaras:v4"):
-        data["keyterms"] = json.dumps(["Sambhal", "EMI", "installment", "किस्त", "ಕಂತು"])
     r = httpx.post(
         f"{config.SARVAM_BASE}/speech-to-text",
         headers={"api-subscription-key": config.SARVAM_API_KEY},
-        data=data, files={"file": (filename, audio, mime or "audio/webm")}, timeout=config.VOICE_TIMEOUT,
+        data=data, files={"file": (filename, audio, mime)}, timeout=config.VOICE_TIMEOUT,
     )
-    if r.status_code == 400 and "keyterms" in data:   # older accounts/models: retry without keyterms
-        data.pop("keyterms")
-        r = httpx.post(f"{config.SARVAM_BASE}/speech-to-text",
-                       headers={"api-subscription-key": config.SARVAM_API_KEY},
-                       data=data, files={"file": (filename, audio, mime or "audio/webm")},
-                       timeout=config.VOICE_TIMEOUT)
     if r.status_code >= 400:
         STATS["last_error"] = f"STT {r.status_code}: {r.text[:200]}"
         r.raise_for_status()

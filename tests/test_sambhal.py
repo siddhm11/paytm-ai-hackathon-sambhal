@@ -176,10 +176,12 @@ def test_sarvam_tts_and_stt_requests(monkeypatch, tmp_path):
     assert kw["headers"]["api-subscription-key"] == "sk_test"
     assert kw["json"]["language_code"] == "kn-IN" and kw["json"]["model"] == config.TTS_MODEL
     assert voice.tts("ನಮಸ್ಕಾರ", "kn") == b"RIFFfake" and len(seen) == 1     # second call is cached
-    r = voice.stt(b"\x00" * 2000, "reply.webm", "audio/webm", "kn")
+    r = voice.stt(b"\x00" * 2000, "reply.webm", "audio/webm;codecs=opus", "kn")    # exactly what Chrome sends
     assert r["transcript"] == RAVI_REPLY and r["language"] == "kn"
     url, kw = seen[-1]
     assert url.endswith("/speech-to-text") and kw["data"]["language_code"] == "kn-IN"
+    assert kw["files"]["file"][2] == "audio/webm"                 # Sarvam rejects the ';codecs=opus' suffix
+    assert "keyterms" not in kw["data"]                            # hint words came back as transcripts of silence
 
 
 # ---------------------------------------------------------------- reader safety: accepting changes the loan
@@ -221,6 +223,13 @@ def test_bare_no_to_a_checkin_asks_why():
 
 
 # ---------------------------------------------------------------- live-AI behaviour found with a real Sarvam key
+def test_explicit_hardship_keyword_outranks_a_vaguer_model_reading(fake_llm):
+    # live, the model sometimes read the wedding line as temporary_closure (no quiet period)
+    fake_llm(lambda s, u: {"intent": "temporary_closure", "language": "kn", "event_days": 3, "summary_en": "Closed."})
+    r = nlu.read(RAVI_REPLY, "kn", date(2026, 10, 23))
+    assert r["intent"] == "family_event" and r["source"] == "llm+rules"
+
+
 def test_code_decides_days_not_the_model(fake_llm):
     # sarvam-105b read Friday "till Sunday" as 2 days; a 2-day pause would leave Sunday overdue
     fake_llm(lambda s, u: {"intent": "family_event", "language": "kn", "event_days": 2, "summary_en": "Wedding."})

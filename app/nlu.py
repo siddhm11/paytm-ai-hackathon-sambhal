@@ -236,6 +236,10 @@ def read(text: str, merchant_lang: str, today: date) -> dict:
         # Safety net: keywords may escalate, never de-escalate.
         if rules["intent"] in SAFETY_INTENTS and INTENTS.index(rules["intent"]) < INTENTS.index(intent):
             out["intent"], out["source"] = rules["intent"], "llm+safety-net"
+        # A hardship the keywords name explicitly (ಮದುವೆ = wedding) outranks a vaguer reading by the model. Live,
+        # sarvam-105b sometimes read Ravi's wedding line as "shop closed", which skips the family-function quiet period.
+        elif rules["intent"] in HARDSHIP and INTENTS.index(rules["intent"]) < INTENTS.index(intent):
+            out["intent"], out["source"] = rules["intent"], "llm+rules"
         if intent == "unclear" and rules["intent"] != "unclear":
             out["intent"], out["source"] = rules["intent"], "llm+rules"
         return out

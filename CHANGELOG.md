@@ -38,6 +38,12 @@
   - Fixes: a question or setting the merchant started used to leave a case open that hid later early-warning
     flags; 9 loans started before the sales history and showed phantom missed payments (could fail eligibility).
   - Replay now: 29 of 50 flagged; with Sambhal 5 overdue, without 22; 0 violations in 73 messages. 125 tests.
+- 29 Oct, end-to-end voice test (`scripts/check_mic.py`: a recorded Kannada reply played into the app's own mic
+  button). Found and fixed: Sarvam rejected every browser recording (`audio/webm;codecs=opus` label); with hint
+  words, Sarvam returned "ಕಂತು" for silence and the agent closed Ravi's case on it (hints removed: silence is now
+  empty and the app asks to try again); the model sometimes read the wedding line as "shop closed" (an explicit
+  hardship keyword now outranks a vaguer reading). Now: Ravi's line, an off-script fever reply and "okay, but why
+  only 3 days?" are all heard word for word in ~0.3 s and handled correctly. 126 tests.
 
 ## On the day (31 Oct 2026)
 - 

@@ -6,6 +6,8 @@ Tick **Big text** in the header on a projector.
 
 **Before you start:** server running, browser at `localhost:8000`, **Reset** pressed, welcome card closed, volume
 up, phone hotspot ready. Header chips should say *Voice: Sarvam* and *AI: sarvam-105b* (or flip **Offline**).
+`python scripts/check_mic.py` passed on this network (then Reset). Speak close to the laptop; if the room is loud,
+use the 🎙 shortcut instead.
 
 | Step | Glows on | Say (cue points) |
 |---|---|---|

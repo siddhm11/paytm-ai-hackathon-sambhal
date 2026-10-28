@@ -31,8 +31,21 @@ def outbound(w: World):
 def collect():
     lines = {}
     w = World(use_llm=False)
-    presenter.go_to(w, 8)
+    presenter.go_to(w, len(presenter.STEPS) - 1)        # Ravi's week, pay-ahead, Shobha, Bellandur: every shop
     lines.update({t: l for t, l in outbound(w)})
+    for key, by_lang in replies.QUICK_REPLIES.items():  # one-tap replies and home buttons, Ravi in Kannada
+        w = World(use_llm=False)
+        presenter.go_to(w, 3)
+        w.inbound("M01", by_lang["kn"])
+        lines.update({t: l for t, l in outbound(w)})
+    w = World(use_llm=False)                            # the switches: consent and pay-ahead, off and on
+    presenter.go_to(w, 9)
+    for on in (False, True):
+        w.set_consent("M01", on)
+    w.set_cushion("M01", False)
+    lines.update({t: l for t, l in outbound(w)})
+    for lang in ("kn", "hi", "en"):                     # Sambhal's promise, read aloud
+        lines[" ".join(p["text"][lang] for p in replies.PROMISES)] = lang
     for text in TRY_LINES:                    # what the quick-reply chips can trigger on stage
         w = World(use_llm=False)
         presenter.go_to(w, 3)

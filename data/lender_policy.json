@@ -71,6 +71,27 @@
         "min_paid_ratio": 0.6,
         "no_relief_within_days": 0
       }
+    },
+    {
+      "id": "AREA_PAUSE",
+      "kind": "pause",
+      "label": {
+        "en": "Area pause (lender staff approve)",
+        "hi": "इलाके के लिए छूट (लेंडर स्टाफ़ मंज़ूर करेगा)",
+        "kn": "ಪ್ರದೇಶದ ವಿರಾಮ (ಸಾಲದಾತರ ಸಿಬ್ಬಂದಿ ಒಪ್ಪಿಗೆ)"
+      },
+      "max_days": 5,
+      "repay_over_days": 14,
+      "reasons": [
+        "local_event"
+      ],
+      "requires_human": true,
+      "eligibility": {
+        "min_loan_age_days": 14,
+        "max_dpd": 7,
+        "min_paid_ratio": 0.5,
+        "no_relief_within_days": 0
+      }
     }
   ],
   "never_offered_by_agent": [

@@ -21,6 +21,23 @@
   show a day-by-day preview; "talk to a person" always works; 14-day deduction calendar. Each presenter step opens
   the right screens and highlights what to point at; step 7 has a payoff card; caption bar stays on screen; Big
   text mode; welcome card. 112 tests
+- 29 Oct, prepare and beyond Ravi:
+  - Pay-ahead: on good days a little goes towards future installments; on a short day it pays first. Offered after
+    recovery (new step 9 "Prepare"); Ravi's what-if shows ₹3,800 paid ahead would have covered the wedding. The
+    replay gains a "pay-ahead only" column (labelled as an upper bound).
+  - Sambhal's promise: six promises in kn/hi/en, read aloud, each mapped to its rule and the checks that prove it.
+    Consent can be switched off and on in the app.
+  - Tell us first: a merchant plans a closure (reason + dates) and the lender's pause is booked for those days.
+  - Trust, then check: normal sales on a paused day end the pause early and shrink the catch-up.
+  - Neighbourhood alerts: many shops in one area down together → no check-ins there, one lender decision (area
+    pause). New demo shops: Shobha (M42) and eight in Bellandur (M43-M50), replacing the last background slots so
+    the total stays 50.
+  - Staff actions for cases with a person (approve a staff-only option, resolve a grievance, clear a review, log a
+    call), inside the same rules (no calls at night or in a bereavement).
+  - Lender what-if: change the relief menu and replay the same 50 merchants before it goes live.
+  - Fixes: a question or setting the merchant started used to leave a case open that hid later early-warning
+    flags; 9 loans started before the sales history and showed phantom missed payments (could fail eligibility).
+  - Replay now: 29 of 50 flagged; with Sambhal 5 overdue, without 22; 0 violations in 73 messages. 125 tests.
 
 ## On the day (31 Oct 2026)
 - 

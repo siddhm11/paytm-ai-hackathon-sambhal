@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from statistics import median
 
 HISTORY_START = date(2026, 6, 15)
@@ -211,10 +211,11 @@ def build(seed: int = 7):
     loans: dict[str, Loan] = {}
     sales: dict[str, dict[date, int]] = {}
 
-    def gen_sales(base: int, events: list[tuple[date, int, float]]):
+    def gen_sales(base: int, events: list[tuple[date, int, float]], r: random.Random | None = None):
+        r = r or rng
         out = {}
         for d in _days(HISTORY_START, DATA_END):
-            v = base * DOW_FACTORS[d.weekday()] * rng.uniform(0.93, 1.07)
+            v = base * DOW_FACTORS[d.weekday()] * r.uniform(0.93, 1.07)
             out[d] = int(round(v, -1))
         for start, n, f in events:
             for k in range(n):
@@ -280,4 +281,65 @@ def build(seed: int = 7):
                           tenure_days=tenure, disbursed_on=disbursed)
         sales[mid] = gen_sales(base, events)
 
+    # --- the last nine background slots become two demo stories. They use their own random generator, so
+    # merchants M10-M41 are exactly as before and the total stays 50.
+    srng = random.Random(seed + 1000)
+    for spec in SPECIAL:
+        mid = spec["id"]
+        L = spec["loan"]
+        merchants[mid] = Merchant(
+            id=mid, owner=spec["owner"], first=spec["first"], shop=spec["shop"], kind=spec["kind"], area=spec["area"],
+            lang=spec["lang"], phone=f"+91 9{srng.randrange(100000000, 999999999)}", consent=True,
+            base_sales=spec["base"], script=spec.get("script"), note=spec.get("note", ""),
+            first_local=spec.get("first_local", spec["first"]))
+        loans[mid] = Loan(id=f"L-{mid}", merchant_id=mid, principal=L["principal"], total=L["installment"] * L["tenure"],
+                          installment=L["installment"], tenure_days=L["tenure"], disbursed_on=L["disbursed"])
+        sales[mid] = gen_sales(spec["base"], spec.get("events", []), srng)
+
+    # Some loans began before the sales history does. Without sales for those days the ledger counted them as
+    # missed installments, which made 9 merchants look like worse payers than they are (and could fail the lender's
+    # eligibility rules). Fill those days from each shop's normal pattern, with a separate generator so every
+    # existing number stays the same.
+    frng = random.Random(seed + 2000)
+    for mid, loan in loans.items():
+        d = loan.disbursed_on
+        while d < HISTORY_START:
+            sales[mid].setdefault(d, int(round(merchants[mid].base_sales * DOW_FACTORS[d.weekday()]
+                                                * frng.uniform(0.93, 1.07), -1)))
+            d += timedelta(days=1)
+
     return merchants, loans, sales
+
+
+# Waterlogging after heavy rain in one neighbourhood: Wed 28 Oct a quarter of normal, Thu 29 shut, Fri 30 recovering.
+FLOOD = [(date(2026, 10, 28), 1, 0.25), (date(2026, 10, 29), 1, 0.0), (date(2026, 10, 30), 1, 0.40)]
+
+
+def _bellandur(n, owner, first, shop, kind, lang, base, inst, disbursed, first_local=None):
+    return dict(id=f"M{n}", owner=owner, first=first, first_local=first_local or first, shop=shop, kind=kind,
+                area="Bellandur", lang=lang, base=base, events=FLOOD,
+                loan=dict(principal=int(round(inst * 180 / 1.125, -3)), installment=inst, tenure=180, disbursed=disbursed),
+                note="Neighbourhood alert: many shops in one area dip together. Sambhal pauses reminders and asks the "
+                     "lender for one area-wide decision instead of eight separate check-ins.")
+
+
+SPECIAL = [
+    dict(id="M42", owner="Shobha Hegde", first="Shobha", first_local="ಶೋಭಾ", shop="Shobha Bangles & Fancy Store",
+         kind="Bangles", area="Chickpet", lang="kn", base=4800,
+         loan=dict(principal=90000, installment=560, tenure=180, disbursed=date(2026, 6, 30)),
+         events=[(date(2026, 10, 30), 2, 0.0)],     # plans Fri-Sun for her sister's wedding, reopens on Sunday
+         script=dict(plan=dict(at=datetime(2026, 10, 27, 11, 0), reason="family_event", start=date(2026, 10, 30), days=3),
+                     accept="first"),     # used only by the replay; on stage the presenter plans for her
+         note="Tell us first: plans her sister's wedding closure (Fri-Sun) in advance. Reopens on Sunday, so the "
+              "pause ends early (trust, then check)."),
+    _bellandur(43, "Manjunath Reddy", "Manjunath", "Lakeview Provisions", "Kirana", "kn", 9000, 1100, date(2026, 6, 2),
+               "ಮಂಜುನಾಥ್"),
+    _bellandur(44, "Kavitha Naik", "Kavitha", "Sri Ganesh Stores", "Kirana", "kn", 6500, 800, date(2026, 7, 14), "ಕವಿತಾ"),
+    _bellandur(45, "Rakesh Yadav", "Rakesh", "Fresh Veg Corner", "Vegetables", "hi", 4500, 560, date(2026, 8, 1)),
+    _bellandur(46, "Ann Mathew", "Ann", "Royal Bakery", "Bakery", "en", 8000, 1000, date(2026, 6, 20)),
+    _bellandur(47, "Girish Bhat", "Girish", "Green Leaf Medicals", "Medical store", "kn", 11000, 1300,
+               date(2026, 5, 28), "ಗಿರೀಶ್"),
+    _bellandur(48, "Salim Khan", "Salim", "Ali Mobile Care", "Mobile repair", "hi", 5200, 640, date(2026, 7, 2)),
+    _bellandur(49, "Priya Pinto", "Priya", "Bellandur Tailors", "Tailor", "en", 3800, 460, date(2026, 8, 18)),
+    _bellandur(50, "Deepa Shetty", "Deepa", "Sai Tiffin Centre", "Tea stall", "kn", 5600, 700, date(2026, 6, 9), "ದೀಪಾ"),
+]

@@ -97,8 +97,10 @@
       <button role="tab" data-tab="week">With vs without</button>
       <button role="tab" data-tab="proof">Proof</button>
       <button role="tab" data-tab="audit">Audit log <span class="count" id="auditCount">0</span></button>
+      <button role="tab" data-tab="whatif">Lender what-if</button>
     </nav>
     <div class="tabpane" id="tab-cases">
+      <div id="alerts" class="alerts"></div>
       <div class="cases">
         <div class="case-list" id="caseList"></div>
         <div class="case-detail" id="caseDetail"></div>
@@ -125,6 +127,7 @@
         </div>
       </div>
     </div>
+    <div class="tabpane" id="tab-whatif" hidden></div>
     <div class="tabpane" id="tab-audit" hidden>
       <div class="audit-head"><label class="toggle small"><input type="checkbox" id="auditFocus"><span>Only this merchant</span></label></div>
       <div class="tablewrap"><table class="audit"><thead><tr><th>Time</th><th>Merchant</th><th>Rule</th><th>Decision</th><th>Detail</th></tr></thead><tbody id="auditBody"></tbody></table></div>

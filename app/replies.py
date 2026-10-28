@@ -195,6 +195,39 @@ T: dict[str, dict[str, str]] = {
         "kn": "ಸರಿ. ಸಂಭಲ್ ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಅಗತ್ಯವಿದ್ದರೆ {lender} ನ ಒಬ್ಬರು ಬೆಳಿಗ್ಗೆ 8 ರಿಂದ ಸಂಜೆ 7 ರ ನಡುವೆ ಕರೆ "
               "ಮಾಡಬಹುದು.",
     },
+    "plan_in": {"en": "Shop closed {range}.", "hi": "{range} दुकान बंद रहेगी।", "kn": "{range} ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತದೆ."},
+    "plan_thanks": {"en": "Thanks for telling us early.", "hi": "पहले से बताने के लिए धन्यवाद।",
+                    "kn": "ಮುಂಚಿತವಾಗಿ ತಿಳಿಸಿದ್ದಕ್ಕೆ ಧನ್ಯವಾದಗಳು."},
+    "pause_ended": {
+        "en": "Your shop was open on {open_day}, so the pause ended early and there is less to catch up. From {start}: "
+              "₹{installment} + ₹{per_day} a day for {catchup_days} days.",
+        "hi": "{open_day} को आपकी दुकान खुली थी, इसलिए छूट जल्दी खत्म हो गई और बकाया कम हो गया। {start} से {catchup_days} दिन "
+              "तक रोज़ ₹{installment} + ₹{per_day} कटेगा।",
+        "kn": "{open_day} ರಂದು ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆದಿತ್ತು, ಆದ್ದರಿಂದ ವಿರಾಮ ಬೇಗ ಮುಗಿದಿದೆ ಮತ್ತು ಬಾಕಿ ಕಂತು ಕಡಿಮೆಯಾಗಿದೆ. {start} ರಿಂದ "
+              "{catchup_days} ದಿನಗಳವರೆಗೆ ದಿನಕ್ಕೆ ₹{installment} + ₹{per_day} ಕಡಿತವಾಗುತ್ತದೆ.",
+    },
+    "pause_cancelled": {
+        "en": "Your shop was open on {open_day}, so the pause wasn't needed. Your installments continue as usual.",
+        "hi": "{open_day} को आपकी दुकान खुली थी, इसलिए छूट की ज़रूरत नहीं पड़ी। आपकी किस्तें पहले की तरह चलेंगी।",
+        "kn": "{open_day} ರಂದು ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆದಿತ್ತು, ಆದ್ದರಿಂದ ವಿರಾಮದ ಅಗತ್ಯ ಬರಲಿಲ್ಲ. ನಿಮ್ಮ ಕಂತುಗಳು ಎಂದಿನಂತೆ ಮುಂದುವರಿಯುತ್ತವೆ.",
+    },
+    "staff_pause": {
+        "en": "{lender}'s team has approved a {days}-day pause: no deduction on {range}. The ₹{paused} is collected as "
+              "₹{per_day} extra a day for {catchup_days} days from {start}.",
+        "hi": "{lender} की टीम ने {days} दिन की छूट मंज़ूर की है: {range} को कोई कटौती नहीं। ₹{paused} की रकम {start} से "
+              "{catchup_days} दिन तक रोज़ ₹{per_day} अतिरिक्त कटेगी।",
+        "kn": "{lender} ತಂಡ {days} ದಿನಗಳ ವಿರಾಮವನ್ನು ಒಪ್ಪಿದೆ: {range} ರಂದು ಕಡಿತ ಇಲ್ಲ. ₹{paused} ಮೊತ್ತವನ್ನು {start} ರಿಂದ "
+              "{catchup_days} ದಿನಗಳವರೆಗೆ ದಿನಕ್ಕೆ ₹{per_day} ಹೆಚ್ಚುವರಿಯಾಗಿ ಕಡಿತ ಮಾಡಲಾಗುತ್ತದೆ.",
+    },
+    "area_relief": {
+        "en": "Because of the disruption in {area}, {lender} has paused your deductions on {range}. The ₹{paused} is "
+              "collected as ₹{per_day} extra a day for {catchup_days} days from {start}. Reply any time if you need help.",
+        "hi": "{area} इलाके में आई परेशानी की वजह से {lender} ने {range} को आपकी कटौती रोक दी है। ₹{paused} की रकम {start} से "
+              "{catchup_days} दिन तक रोज़ ₹{per_day} अतिरिक्त कटेगी। मदद चाहिए तो कभी भी जवाब दीजिए।",
+        "kn": "{area} ಪ್ರದೇಶದಲ್ಲಿನ ತೊಂದರೆಯಿಂದಾಗಿ {lender} ನಿಮ್ಮ ಕಡಿತವನ್ನು {range} ರಂದು ನಿಲ್ಲಿಸಿದೆ. ₹{paused} ಮೊತ್ತವನ್ನು {start} "
+              "ರಿಂದ {catchup_days} ದಿನಗಳವರೆಗೆ ದಿನಕ್ಕೆ ₹{per_day} ಹೆಚ್ಚುವರಿಯಾಗಿ ಕಡಿತ ಮಾಡಲಾಗುತ್ತದೆ. ಸಹಾಯ ಬೇಕಿದ್ದರೆ ಯಾವಾಗ ಬೇಕಾದರೂ "
+              "ಉತ್ತರಿಸಿ.",
+    },
     "human_ack": {
         "en": "Sure. I've asked a person from {lender} to call you. They call only between 8 am and 7 pm.",
         "hi": "ज़रूर। मैंने {lender} के एक व्यक्ति से आपको कॉल करने को कहा है। वे सिर्फ़ सुबह 8 से शाम 7 बजे के बीच कॉल "
@@ -309,10 +342,22 @@ QUICK_INTENT = {"family": "family_event", "illness": "illness", "closed": "tempo
                 "person": "talk_to_person"}
 
 
+# Place and reason names in the merchant's language.
+AREA_LOCAL = {"Bellandur": {"en": "Bellandur", "kn": "ಬೆಳ್ಳಂದೂರು", "hi": "बेलंदूर"}}
+PLAN_REASON = {
+    "family_event": {"en": "Family function", "kn": "ಮನೆಯಲ್ಲಿ ಕಾರ್ಯಕ್ರಮ", "hi": "घर में समारोह"},
+    "illness": {"en": "Unwell", "kn": "ಹುಷಾರಿಲ್ಲ", "hi": "तबीयत खराब"},
+    "temporary_closure": {"en": "Travel or repairs", "kn": "ಪ್ರಯಾಣ ಅಥವಾ ರಿಪೇರಿ", "hi": "यात्रा या मरम्मत"},
+    "medical_emergency": {"en": "Hospital", "kn": "ಆಸ್ಪತ್ರೆ", "hi": "अस्पताल"},
+}
+
+
 def _fmt_facts(f: dict, lang: str) -> dict:
     out = {"lender": LENDER_NAME}
     for k, v in f.items():
-        if isinstance(v, datetime):
+        if isinstance(v, dict) and lang in v:          # already in each language
+            out[k] = v[lang]
+        elif isinstance(v, datetime):
             out[k] = fdate(v.date(), lang, weekday=True)
         elif isinstance(v, date):
             out[k] = fdate(v, lang)

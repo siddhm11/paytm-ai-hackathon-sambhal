@@ -169,6 +169,25 @@ button:disabled { opacity: .45; cursor: default; }
 .st-with_person, .st-stopped { background: var(--violet-soft); color: var(--violet); }
 .st-review, .st-grievance { background: var(--red-soft); color: var(--red); }
 
+/* neighbourhood alert */
+.alerts:empty { display: none; }
+.alerts { margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; }
+.alert-card { border: 1px solid var(--rule); border-radius: 12px; background: var(--sheet); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.alert-card.live { border-color: #e4b866; background: #fffaf0; }
+.ac-head { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.ac-head b { display: block; font-size: 15px; } .ac-head span { display: block; font-size: 13px; margin-top: 2px; }
+.ac-head button { flex: none; }
+.ac-shops { display: flex; flex-wrap: wrap; gap: 5px; }
+.ac-shop { font-size: 12px; font-weight: 500; padding: 3px 9px; border-radius: 99px; }
+.ac-shop i { font-style: normal; font-family: var(--f-num); color: var(--amber); }
+.ac-shop em { font-style: normal; color: var(--red); font-weight: 700; }
+.staff-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.staff-acts button { font-size: 12.5px; padding: 5px 10px; }
+.staff-acts button.ghost { background: #fff; }
+.staff-acts small { font-weight: 500; }
+.handoff.done { background: var(--teal-soft); color: var(--teal-2); }
+.dots li.sep { width: 1px; background: var(--rule); margin: 4px 3px; }
+.dots li.extra button { border-style: dashed; }
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--rule); }
 .tabs button { border: 0; border-radius: 8px 8px 0 0; background: none; padding: 8px 14px; color: var(--ink-2); border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .tabs button.on { color: var(--ink); border-bottom-color: var(--teal); background: var(--sheet); }
@@ -228,6 +247,23 @@ table.audit td:first-child { font-family: var(--f-num); white-space: nowrap; col
 .d-held, .d-hold { color: var(--amber); font-weight: 700; } .d-blocked, .d-rejected, .d-review { color: var(--red); font-weight: 700; }
 .d-sent, .d-offered, .d-recovered { color: var(--teal-2); font-weight: 700; }
 
+/* lender what-if */
+.whatif { background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.wi-head { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.wi-head h3 { margin: 0; font-size: 16px; } .wi-head p { margin: 2px 0 0; font-size: 13px; max-width: 80ch; }
+.wi-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.wi-ctl { display: flex; flex-direction: column; gap: 4px; font-size: 13px; background: var(--rule-2); border-radius: 10px; padding: 8px 10px; }
+.wi-ctl small { color: var(--ink-3); }
+.seg { display: flex; gap: 3px; }
+.seg button { flex: 1; padding: 5px 0; font: 600 13px var(--f-num); background: #fff; }
+.seg button.cur { text-decoration: underline; text-underline-offset: 3px; }
+.seg button.on { background: var(--teal); border-color: var(--teal); color: #fff; }
+.wi-table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.wi-table th { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); text-align: right; padding: 6px 10px; }
+.wi-table th:first-child { text-align: left; }
+.wi-table td { padding: 7px 10px; border-top: 1px solid var(--rule-2); }
+.wi-table td.n { text-align: right; font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.wi-table .good { color: var(--teal-2); font-weight: 700; } .wi-table .bad { color: var(--red); font-weight: 700; }
 /* proof */
 .proof { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
 .proof-col { background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
@@ -351,6 +387,14 @@ table.audit td:first-child { font-family: var(--f-num); white-space: nowrap; col
 .pp-ids { display: flex; flex-wrap: wrap; gap: 3px; justify-content: flex-end; max-width: 190px; }
 .pp-ids code { font: 500 11px var(--f-num); background: var(--rule-2); border-radius: 4px; padding: 1px 5px; color: var(--ink-2); }
 .pp-ids code.ok { background: var(--teal-soft); color: var(--teal-2); } .pp-ids code.no { background: var(--red-soft); color: var(--red); }
+/* planner */
+.r-2 { grid-template-columns: 1fr 1fr; }
+.r-btn.on { border-color: var(--teal); background: var(--teal-soft); box-shadow: inset 0 0 0 1px var(--teal); }
+.pchips { display: flex; flex-wrap: wrap; gap: 5px; }
+.pchip { padding: 5px 9px; font-size: 12.5px; border-radius: 99px; background: var(--paper); font-weight: 600; }
+.pchip.on { background: var(--teal); border-color: var(--teal); color: #fff; }
+.plan-sum { background: var(--teal-soft); color: var(--teal-2); border-radius: 10px; padding: 8px 10px; font-weight: 700; }
+.plan-send { padding: 10px; font-size: 15px; }
 /* my loan */
 .ln-sum { display: flex; flex-direction: column; gap: 6px; }
 .ln-bar { height: 8px; border-radius: 4px; background: var(--rule-2); overflow: hidden; }

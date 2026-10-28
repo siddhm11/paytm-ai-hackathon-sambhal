@@ -5,7 +5,9 @@ here in code; the language model only ever sees the finished numbers.
 """
 from __future__ import annotations
 
+import copy
 import json
+from contextlib import contextmanager
 from datetime import date, timedelta
 from functools import lru_cache
 from statistics import median
@@ -16,8 +18,65 @@ from .ledger import catchup_split
 
 
 @lru_cache(maxsize=1)
-def load_policy() -> dict:
+def _file_policy() -> dict:
     return json.loads((DATA_DIR / "lender_policy.json").read_text(encoding="utf-8"))
+
+
+_OVERRIDE: dict | None = None
+
+
+def load_policy() -> dict:
+    return _OVERRIDE or _file_policy()
+
+
+@contextmanager
+def using(p: dict):
+    """Run with a different relief menu (the lender's what-if). The caller holds the world lock."""
+    global _OVERRIDE
+    old, _OVERRIDE = _OVERRIDE, p
+    try:
+        yield
+    finally:
+        _OVERRIDE = old
+
+
+# What a lender may change in the what-if, and the allowed values (kept small and safe on purpose).
+TUNABLE = {
+    "pause_days": {"label": "Automatic pause: up to", "unit": "days", "values": [2, 3, 4, 5], "path": ("PAUSE_3", "max_days")},
+    "catchup_days": {"label": "Paused amount repaid over", "unit": "days", "values": [7, 14, 21, 30],
+                     "path": ("PAUSE_3", "repay_over_days")},
+    "half_share": {"label": "Slow business: pay", "unit": "% of installment", "values": [50, 60, 75],
+                   "path": ("HALF_14", "fraction")},
+    "paid_ratio": {"label": "Eligible if paid on time at least", "unit": "% of days", "values": [70, 80, 90],
+                   "path": ("PAUSE_3", "eligibility", "min_paid_ratio")},
+}
+
+
+def current_settings(p: dict | None = None) -> dict:
+    p = p or load_policy()
+    by = {o["id"]: o for o in p["options"]}
+    out = {}
+    for k, t in TUNABLE.items():
+        v = by[t["path"][0]]
+        for key in t["path"][1:]:
+            v = v[key]
+        out[k] = round(v * 100) if k in ("half_share", "paid_ratio") else v
+    return out
+
+
+def with_settings(changes: dict) -> dict:
+    """A copy of the lender's menu with the what-if changes applied (unknown keys and values are refused)."""
+    p = copy.deepcopy(_file_policy())
+    by = {o["id"]: o for o in p["options"]}
+    for k, val in changes.items():
+        t = TUNABLE.get(k)
+        if not t or val not in t["values"]:
+            raise ValueError(f"{k}={val} is not an allowed setting")
+        target = by[t["path"][0]]
+        for key in t["path"][1:-1]:
+            target = target[key]
+        target[t["path"][-1]] = val / 100 if k in ("half_share", "paid_ratio") else val
+    return p
 
 
 def option(opt_id: str) -> dict | None:

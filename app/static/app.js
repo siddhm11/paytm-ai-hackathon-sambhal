@@ -90,7 +90,9 @@ function renderTop() {
 function renderStory() {
   const ol = $("#stepDots"); ol.innerHTML = "";
   S.steps.forEach(s => {
+    if (s.extra && !S.steps[s.n - 1].extra) { const sep = document.createElement("li"); sep.className = "sep"; sep.title = "Beyond Ravi (optional)"; ol.appendChild(sep); }
     const li = document.createElement("li");
+    if (s.extra) li.className = "extra";
     const b = document.createElement("button");
     b.textContent = s.n; b.title = s.title;
     b.className = s.n < S.step ? "done" : s.n === S.step ? "now" : "";
@@ -129,6 +131,7 @@ const UI = {
     promise: "Sambhal's promise", listen: "Listen", consent_yes: "You said yes to Sambhal messages",
     consent_no: "Sambhal messages are off", stop_msgs: "Stop Sambhal messages", start_help: "Turn on Sambhal help",
     help_off_note: "A person from the lender will call if needed.",
+    pick_reason: "Reason", from_day: "From", how_many: "How many days", send_plan: "Send to Sambhal",
   },
   kn: {
     home: "ಮುಖಪುಟ", messages: "ಸಂದೇಶಗಳು", loan: "ನನ್ನ ಸಾಲ", hello: "ನಮಸ್ಕಾರ", last_day: "ಕೊನೆಯ ದಿನದ ಲೆಕ್ಕ", sales: "ಮಾರಾಟ",
@@ -149,6 +152,7 @@ const UI = {
     promise: "ಸಂಭಲ್‌ನ ಭರವಸೆ", listen: "ಕೇಳಿ", consent_yes: "ನೀವು ಸಂಭಲ್ ಸಂದೇಶಗಳಿಗೆ ಒಪ್ಪಿದ್ದೀರಿ",
     consent_no: "ಸಂಭಲ್ ಸಂದೇಶಗಳು ಆಫ್ ಆಗಿವೆ", stop_msgs: "ಸಂಭಲ್ ಸಂದೇಶಗಳನ್ನು ನಿಲ್ಲಿಸಿ", start_help: "ಸಂಭಲ್ ಸಹಾಯ ಆನ್ ಮಾಡಿ",
     help_off_note: "ಅಗತ್ಯವಿದ್ದರೆ ಸಾಲದಾತರ ಕಡೆಯಿಂದ ಒಬ್ಬರು ಕರೆ ಮಾಡುತ್ತಾರೆ.",
+    pick_reason: "ಕಾರಣ", from_day: "ಯಾವ ದಿನದಿಂದ", how_many: "ಎಷ್ಟು ದಿನ", send_plan: "ಸಂಭಲ್‌ಗೆ ಕಳುಹಿಸಿ",
   },
   hi: {
     home: "होम", messages: "संदेश", loan: "मेरा लोन", hello: "नमस्ते", last_day: "पिछले दिन का हिसाब", sales: "बिक्री",
@@ -169,6 +173,7 @@ const UI = {
     promise: "संभल का वादा", listen: "सुनें", consent_yes: "आपने संभल संदेशों के लिए हाँ कहा है",
     consent_no: "संभल संदेश बंद हैं", stop_msgs: "संभल संदेश बंद करें", start_help: "संभल मदद चालू करें",
     help_off_note: "ज़रूरत हो तो लेंडर की ओर से कोई कॉल करेगा।",
+    pick_reason: "कारण", from_day: "किस दिन से", how_many: "कितने दिन", send_plan: "संभल को भेजें",
   },
 };
 const LOCALE = { kn: "kn-IN", hi: "hi-IN", en: "en-IN" };
@@ -245,7 +250,7 @@ function renderHome() {
       <div class="h-row"><span class="lbl">${tt("paid_ahead")}</span><span class="h-big">${inr(cu.balance)}</span></div>
       <div class="h-note" ${langAttr(m.lang)}>${cu.covers_days ? esc(tf("covers", { n: cu.covers_days })) + " · " : ""}${esc(tf("pa_rule", { a: inr(cu.amount).slice(1), t: inr(cu.threshold).slice(1) }))}</div>
       <button class="linkish" data-cush="off" ${langAttr(m.lang)}>${esc(t("turn_off"))}</button></div>`;
-  } else if (cu.suggest) {
+  } else if (cu.suggest && m.thread.some(x => (x.options || []).some(o => o.kind === "payahead"))) {   // after Sambhal offered it
     cush = `<div class="h-card h-cush off"><h4>${tt("pa_pitch")}</h4>
       <div class="h-note" ${langAttr(m.lang)}>${esc(t("payahead"))}: ${esc(tf("pa_rule", { a: inr(cu.suggest.amount).slice(1), t: inr(cu.suggest.threshold).slice(1) }))}</div>
       <button class="cush-on" data-cush="on" ${langAttr(m.lang)}>${esc(t("turn_on"))}</button></div>`;
@@ -276,8 +281,39 @@ function openPromise() {
   $$("[data-consent]", sheet).forEach(b => (b.onclick = () => { sheet.hidden = true; setConsent(b.dataset.consent === "on"); }));
 }
 
+const PLAN_ICON = { family_event: "🎉", illness: "🤒", temporary_closure: "🧳", medical_emergency: "🏥" };
+const plan = { reason: "family_event", start: null, days: 3 };
+function openPlanner() {
+  const m = S.merchant, lang = m.lang, sheet = $("#sheet");
+  const first = m.upcoming[0].date;
+  if (!plan.start || plan.start < first) plan.start = first;
+  const dates = Array.from({ length: 10 }, (_, k) => { const d = D(first); d.setDate(d.getDate() + k); return d.toISOString().slice(0, 10); });
+  const end = (() => { const d = D(plan.start); d.setDate(d.getDate() + plan.days - 1); return d.toISOString().slice(0, 10); })();
+  const chip = (attr, val, on, label) => `<button class="pchip ${on ? "on" : ""}" data-${attr}="${val}" ${langAttr(lang)}>${label}</button>`;
+  sheet.innerHTML = `<div class="sh-head"><b>${tt("tell_closure")}</b><button class="sh-x" aria-label="Close">✕</button></div>
+    <p class="r-title">${tt("pick_reason")}</p>
+    <div class="r-row r-2">${Object.entries(S.plan_reasons).map(([k, v]) => `<button type="button" class="r-btn ${plan.reason === k ? "on" : ""}" data-reason="${k}"><span class="ic">${PLAN_ICON[k]}</span><span><span ${langAttr(lang)}>${esc(v[lang])}</span>${$("#enToggle").checked && lang !== "en" ? `<small class="en-sub">${esc(v.en)}</small>` : ""}</span></button>`).join("")}</div>
+    <p class="r-title">${tt("from_day")}</p>
+    <div class="pchips">${dates.map(d => chip("start", d, d === plan.start, esc(lday(d)))).join("")}</div>
+    <p class="r-title">${tt("how_many")}</p>
+    <div class="pchips">${[1, 2, 3, 4, 5, 7].map(n => chip("days", n, n === plan.days, n)).join("")}</div>
+    <div class="plan-sum" ${langAttr(lang)}>${esc(S.plan_reasons[plan.reason][lang])}: ${esc(lday(plan.start))}${plan.days > 1 ? ` – ${esc(lday(end))}` : ""}</div>
+    <button class="primary plan-send" ${langAttr(lang)}>${esc(t("send_plan"))}</button>`;
+  sheet.hidden = false;
+  $(".sh-x", sheet).onclick = () => (sheet.hidden = true);
+  $$("[data-reason]", sheet).forEach(b => (b.onclick = () => { plan.reason = b.dataset.reason; openPlanner(); }));
+  $$("[data-start]", sheet).forEach(b => (b.onclick = () => { plan.start = b.dataset.start; openPlanner(); }));
+  $$("[data-days]", sheet).forEach(b => (b.onclick = () => { plan.days = +b.dataset.days; openPlanner(); }));
+  $(".plan-send", sheet).onclick = () => act(async () => {
+    sheet.hidden = true;
+    S = await post("/api/plan", { merchant_id: focus, ...plan });
+    if (!S.result.ok) toast(S.result.why);
+    screen = "chat"; render(); autoSpeak();
+  });
+}
+
 function homeAction(k) {
-  if (k === "closure") { screen = "chat"; reasonMode = true; renderPhone(); return; }
+  if (k === "closure") { openPlanner(); return; }
   sendInbound(S.quick[k === "ask" ? "ask" : "person"][ML()], "tap");
 }
 
@@ -454,7 +490,27 @@ function spark(rows) {
 }
 
 // ---------------------------------------------------------------- console: cases
+function renderAlerts() {
+  const el = $("#alerts");
+  el.innerHTML = (S.alerts || []).map(a => {
+    const down = a.shops.length, when = fmtDay(a.date);
+    const status = a.approved
+      ? `<span class="pill st-accepted">Area pause approved · ${a.approved.count} shops</span>`
+      : a.quiet ? `<button class="primary" data-area="${a.id}">Approve a 3-day pause for ${down} shops</button>`
+        : `<span class="pill st-ok">Sales recovered</span>`;
+    return `<div class="alert-card ${a.quiet ? "live" : ""}">
+      <div class="ac-head"><div><b>⚠ Neighbourhood alert · ${esc(a.area)}</b>
+        <span>${down} of ${a.of} shops at ${pct(a.avg)} of normal on ${when}, while ${pct(a.rest)} of shops elsewhere were down. Likely a local event (rain, road closure, power cut).</span>
+        <span class="muted">${a.quiet ? "Sambhal has paused reminders there (RBI: no recovery contact during calamities) and asks the lender for one decision instead of separate check-ins." : `Reminders resumed after sales recovered${a.recovered_on ? ` on ${fmtDay(a.recovered_on)}` : ""}.`}</span></div>${status}</div>
+      <div class="ac-shops">${a.shops.map(s => `<button class="ac-shop" data-mid="${s.id}" title="${esc(s.shop)}">${esc(s.name)} <i>${pct(s.ratio)}</i>${s.overdue ? ' <em>overdue</em>' : ""}</button>`).join("")}</div>
+    </div>`;
+  }).join("");
+  $$("[data-area]", el).forEach(b => (b.onclick = () => act(async () => { S = await post("/api/area", { alert_id: b.dataset.area, days: 3 }); render(); })));
+  $$(".ac-shop", el).forEach(b => (b.onclick = () => { lastSpoken = Infinity; load(b.dataset.mid).then(() => { lastSpoken = maxOutId(); }); }));
+}
+
 function renderCases() {
+  renderAlerts();
   const list = $("#caseList");
   if (!S.cases.length) {
     list.innerHTML = `<p class="muted" style="padding:10px">No cases yet. The early-warning rule runs after every evening settlement across all ${S.counts.merchants} merchants.</p>`;
@@ -481,7 +537,9 @@ function renderCaseDetail() {
     const cls = k.ok ? "ok" : k.hold_until ? "hold" : "no";
     return `<div class="check ${cls}"><span class="ic">${k.ok ? "✓" : k.hold_until ? "⏸" : "✕"}</span><div><b>${esc(k.rule)}</b><span>${esc(k.why)}</span></div></div>`;
   }).join("") : "";
-  const handoff = c.human ? `<div class="handoff"><b>With a person at the lender</b>${esc(c.human_reason || "")}${c.human_options && c.human_options.length ? `<br>Staff may offer: ${c.human_options.map(o => esc(o.id)).join(", ")}` : ""}</div>` : "";
+  const acts = (c.staff_actions || []).map(a => `<button class="${a.action === "approve" ? "primary" : "ghost"}" data-staff="${a.action}" data-opt="${a.option || ""}" data-days="${a.days || ""}" ${a.disabled ? `disabled title="${esc(a.why)}"` : ""}>${esc(a.label)}${a.disabled ? ` <small>(${esc(a.why)})</small>` : ""}</button>`).join("");
+  const handoff = c.human || c.review || c.grievance ? `<div class="handoff"><b>With a person at the lender</b>${esc(c.human_reason || "")}${c.human_options && c.human_options.length ? `<br>Staff may offer: ${c.human_options.map(o => esc(o.id)).join(", ")}` : ""}${acts ? `<div class="staff-acts">${acts}</div>` : ""}</div>`
+    : c.accepted_by === "lender staff" ? `<div class="handoff done"><b>Approved by lender staff</b>${esc(c.accepted || "")}</div>` : "";
   const reading = lastIn ? `<div><p class="sec-t">How Sambhal read the last reply</p><div class="reading">
       <span>Intent: <b>${esc(lastIn.nlu.intent.replace(/_/g, " "))}</b></span>
       ${lastIn.nlu.secondary ? `<span>Also: <b>${esc(lastIn.nlu.secondary.replace(/_/g, " "))}</b></span>` : ""}
@@ -497,6 +555,10 @@ function renderCaseDetail() {
     <div><p class="sec-t">Timeline</p><ol class="timeline">${c.timeline.map(t => `<li class="k-${t.kind}"><time>${fmtTime(t.at)}<br>${fmtDay(t.at).split(" ").slice(0, 1)}</time><i></i><span>${esc(t.text)}</span></li>`).join("")}</ol></div>
     ${checks ? `<div><p class="sec-t">Guardrails on the last outbound message</p><div class="checks">${checks}</div></div>` : ""}
     ${reading}`;
+  $$("[data-staff]", el).forEach(b => (b.onclick = () => act(async () => {
+    const r = await post("/api/staff", { merchant_id: m.id, action: b.dataset.staff, option: b.dataset.opt || null, days: +b.dataset.days || null });
+    S = r; if (!r.result.ok) toast(r.result.why); render(); autoSpeak();
+  })));
 }
 
 // ---------------------------------------------------------------- week
@@ -626,6 +688,54 @@ async function runReplay() {
   } catch (e) { out.innerHTML = `<p class="muted">Replay failed: ${esc(e.message)}</p>`; }
 }
 
+// ---------------------------------------------------------------- lender what-if
+let wiChanges = {};
+async function renderWhatIf() {
+  const el = $("#tab-whatif");
+  if (!el.innerHTML) el.innerHTML = `<p class="muted">Replaying 50 merchants…</p>`;
+  let r;
+  try { r = await post("/api/whatif", { changes: wiChanges }); } catch (e) { el.innerHTML = `<p class="muted">What-if failed: ${esc(e.message)}</p>`; return; }
+  const C = r.current, P = r.proposed;
+  const rows = [
+    ["Merchants who fell overdue", C.with.merchants_overdue, P.with.merchants_overdue, v => v, true],
+    ["Merchant-days overdue", C.with.overdue_days, P.with.overdue_days, v => v, true],
+    ["Shops given relief", C.relief_accepted, P.relief_accepted, v => v, null],
+    ["Handed to a person", C.handed_to_person, P.handed_to_person, v => v, null],
+    ["Money paused, repaid later", C.relief_value, P.relief_value, inr, null],
+    ["Heaviest deduction day (median, × installment)", C.with.median_peak_multiple, P.with.median_peak_multiple, v => `${v.toFixed(2)}×`, true],
+    ["Rule violations found by audit", C.violations.length, P.violations.length, v => v, true],
+  ];
+  const delta = (a, b, fmt, lowerBetter) => {
+    if (a === b) return `<span class="muted">same</span>`;
+    const worse = lowerBetter === null ? null : (b > a) === lowerBetter;
+    const d = typeof a === "number" && typeof b === "number" ? b - a : 0;
+    const txt = fmt === inr ? `${d > 0 ? "+" : "−"}${inr(Math.abs(d))}` : `${d > 0 ? "+" : "−"}${fmt(Math.abs(d))}`;
+    return `<span class="${worse === null ? "" : worse ? "bad" : "good"}">${txt}</span>`;
+  };
+  const notes = [];
+  if (P.with.merchants_overdue > C.with.merchants_overdue) notes.push(`${P.with.merchants_overdue - C.with.merchants_overdue} more merchants fall overdue: the menu no longer covers their closures.`);
+  if (P.with.merchants_overdue < C.with.merchants_overdue) notes.push(`${C.with.merchants_overdue - P.with.merchants_overdue} fewer merchants fall overdue.`);
+  if (P.with.median_peak_multiple > C.with.median_peak_multiple) notes.push(`Faster catch-up returns money sooner but makes the heaviest day heavier for the merchant.`);
+  if (P.with.median_peak_multiple < C.with.median_peak_multiple) notes.push(`Gentler catch-up days for merchants; the lender waits longer for the paused money.`);
+  if (P.relief_value !== C.relief_value) notes.push(`${inr(Math.abs(P.relief_value - C.relief_value))} ${P.relief_value > C.relief_value ? "more" : "less"} is paused and repaid later.`);
+  if (!notes.length && Object.keys(wiChanges).length) notes.push("No effect on these merchants: their closures and records are already inside the menu either way.");
+  el.innerHTML = `<div class="whatif">
+    <div class="wi-head"><div><h3>Lender what-if</h3><p class="muted">Change the relief menu and replay the same 50 merchants and days before it goes live. Sambhal can only ever offer what this menu allows; the live demo keeps using today's menu.</p></div>
+      <button class="ghost" id="wiReset" ${Object.keys(wiChanges).length ? "" : "disabled"}>Back to today's menu</button></div>
+    <div class="wi-controls">${Object.entries(r.tunable).map(([k, tn]) => `<div class="wi-ctl"><span>${esc(tn.label)}</span>
+      <div class="seg">${tn.values.map(v => `<button data-k="${k}" data-v="${v}" class="${r.settings[k] === v ? "on" : ""} ${r.now[k] === v ? "cur" : ""}" title="${r.now[k] === v ? "Today's setting" : ""}">${v}</button>`).join("")}</div><small>${esc(tn.unit)}</small></div>`).join("")}</div>
+    <table class="wi-table"><thead><tr><th></th><th>Today's menu</th><th>Proposed</th><th>Change</th></tr></thead><tbody>
+      ${rows.map(([l, a, b, fmt, lb]) => `<tr><td>${l}</td><td class="n">${fmt(a)}</td><td class="n">${fmt(b)}</td><td class="n">${delta(a, b, fmt, lb)}</td></tr>`).join("")}</tbody></table>
+    ${notes.length ? `<p class="note">${notes.map(esc).join(" ")}</p>` : `<p class="note">Pick a setting above to compare. The underlined value is today's.</p>`}
+  </div>`;
+  $$(".seg button", el).forEach(b => (b.onclick = () => {
+    const k = b.dataset.k, v = +b.dataset.v;
+    if (r.now[k] === v) delete wiChanges[k]; else wiChanges[k] = v;
+    renderWhatIf();
+  }));
+  $("#wiReset").onclick = () => { wiChanges = {}; renderWhatIf(); };
+}
+
 // ---------------------------------------------------------------- audit
 async function renderAudit() {
   const only = $("#auditFocus").checked;
@@ -642,7 +752,8 @@ function goStep(n) {
   return act(async () => {
     const prevStep = S.step;
     if (n < prevStep) lastSpoken = Infinity;
-    S = await post("/api/step", { n }); focus = "M01";
+    S = await post("/api/step", { n }); focus = S.focus;
+    $("#sheet").hidden = true;
     if (lastSpoken === Infinity) lastSpoken = maxOutId();
     render(); await applyStep(); autoSpeak();
   });
@@ -651,6 +762,7 @@ const SPOT = {
   home: ["#phone"], settle: ["#scrHome .h-last"], guard: ["#caseDetail .checks"], voice: ["#chat .vn", true],
   reading: ["#caseDetail .reading"], calendar: ["#scrLoan .cal", true], week: ["#tab-week .chartwrap"],
   payoff: ["#tab-week .payoff"], audit: ["#tab-audit .tablewrap"], cushion: ["#tab-week .po.cu"],
+  offer: ["#chat .opt", true], alert: ["#alerts .alert-card"], timeline: ["#caseDetail .timeline"],
 };
 async function applyStep() {
   const st = S.steps[S.step];
@@ -669,7 +781,8 @@ function spot(sel, last = false) {
 async function setTab(name) {
   tab = name;
   $$(".tabs button").forEach(x => x.classList.toggle("on", x.dataset.tab === name));
-  ["cases", "week", "proof", "audit"].forEach(t2 => ($(`#tab-${t2}`).hidden = t2 !== name));
+  ["cases", "week", "proof", "audit", "whatif"].forEach(t2 => ($(`#tab-${t2}`).hidden = t2 !== name));
+  if (name === "whatif") await renderWhatIf();
   if (name === "week") await renderWeek();
   if (name === "audit") await renderAudit();
   if (name === "proof" && !proofLoaded) { proofLoaded = true; runEvals(); runReplay(); }

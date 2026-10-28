@@ -40,6 +40,24 @@ STEPS = [
      "caption": "Ready for the next slow week: on days Ravi sells ₹6,000 or more, ₹100 goes towards future installments. "
                 "Had it been on from the start, ₹3,800 paid ahead would have covered the wedding by itself: no pause, "
                 "no catch-up, nothing overdue."},
+    # Beyond Ravi (optional): the same week, other shops
+    {"at": "2026-10-27T11:00", "title": "Beyond Ravi: Shobha tells us first", "action": "shobha_plan", "focus": "M42",
+     "phone": "chat", "tab": "cases", "spot": "offer", "extra": True,
+     "caption": "Shobha's sister is getting married. She taps 'Tell us about a closure' and picks Fri–Sun before "
+                "anything happens. The lender's pause is booked for those exact days: no dip alarm, no check-in, no worry."},
+    {"at": "2026-10-28T21:05", "title": "Bellandur: eight shops dip together", "focus": "M43", "phone": "home",
+     "tab": "cases", "spot": "alert", "extra": True,
+     "caption": "Eight shops in one neighbourhood fall to a quarter of normal on the same evening while the rest of the "
+                "city is normal. A local event, not eight separate problems: Sambhal sends no reminders there and asks "
+                "the lender for one decision."},
+    {"at": "2026-10-29T10:00", "title": "The lender approves one area pause", "action": "area_approve", "focus": "M43",
+     "phone": "loan", "tab": "cases", "spot": "alert", "extra": True,
+     "caption": "One click: a 3-day pause for every eligible shop in Bellandur, from the lender's own menu. The notice "
+                "waits until sales there recover; until then each shop sees the pause in its app."},
+    {"at": "2026-11-01T21:05", "title": "Trust, then check: Shobha reopened early", "focus": "M42", "phone": "loan",
+     "tab": "cases", "spot": "timeline", "extra": True,
+     "caption": "Sunday's sales were normal, so Shobha's shop was open. The pause ends early and her catch-up shrinks "
+                "to the two days she was really shut. The lender sees why in the audit log."},
 ]
 
 
@@ -51,6 +69,17 @@ def run_action(w: World, action: str):
     elif action == "ravi_accept":
         if case and case.state == "offered" and not case.accepted and case.offered:
             w.accept("M01", case.offered[0], via="tap")
+    elif action == "shobha_plan":
+        c = w.case_for("M42")
+        if not (c and c.planned):
+            w.plan_closure("M42", "family_event", datetime(2026, 10, 30).date(), 3)
+            c = w.case_for("M42")
+        if c.state == "offered" and c.offered and not c.accepted:
+            w.accept("M42", c.offered[0], via="tap")
+    elif action == "area_approve":
+        for a in w.alerts.values():
+            if a["area"] == "Bellandur" and not a["approved"]:
+                w.approve_area(a["id"])
     elif action == "ravi_cushion":
         if not w.loans["M01"].cushion.get("on"):
             w.set_cushion("M01", True)

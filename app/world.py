@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime, time, timedelta
+from statistics import mean
 
 from . import config, guardrails, llm, nlu, policy, replies, signals
 from .data import TRANSLATIONS, build, money, same_weekday_baseline
@@ -18,7 +19,13 @@ OPEN_STATES = {"held", "waiting", "offered", "accepted", "with_person", "review"
 REASON_LABEL = {
     "family_event": "Family function", "illness": "Illness", "temporary_closure": "Shop closed for a while",
     "business_slow": "Business slow", "bereavement": "Bereavement", "medical_emergency": "Medical emergency",
+    "local_event": "Local event (area)",
 }
+AREA_LOW = 0.40          # a shop is 'down' today below 40% of its normal
+AREA_MIN_SHOPS = 5       # an area alert needs at least five shops down...
+AREA_SHARE = 0.60        # ...and most of the area's shops...
+CITY_CALM = 0.15         # ...while fewer than 15% of shops elsewhere are down
+TRUST_OPEN = 0.60        # a paused day with sales above 60% of normal: the shop is open
 INTENT_GLOSS = {
     "bereavement": "Says someone in the family has died.",
     "medical_emergency": "Says a family member is in hospital.",
@@ -42,7 +49,9 @@ KIND_LABEL = {"checkin": "check-in", "offer": "offer", "confirm": "confirmation"
               "waiver_decline": "waiver reply", "dispute": "grievance acknowledgement", "stop_ack": "stop confirmation",
               "ack": "acknowledgement", "no_option": "not-eligible reply", "balance": "balance answer",
               "ask_reason": "clarifying question", "welcome_back": "recovery message",
-              "more_time": "longer-pause request reply", "human_ack": "person-will-call reply"}
+              "more_time": "longer-pause request reply", "human_ack": "person-will-call reply",
+              "pause_update": "pause update", "area_relief": "area pause notice", "staff_pause": "staff-approved pause",
+              "payahead": "pay-ahead confirmation", "consent": "consent confirmation"}
 
 
 @dataclass
@@ -112,6 +121,8 @@ class Case:
     closed_at: datetime | None = None
     outcome: str | None = None
     cards: list = field(default_factory=list)
+    planned: dict | None = None        # the merchant told us about a closure in advance
+    accepted_by: str | None = None     # merchant | lender staff
 
     def last_inbound_recent(self, now: datetime, minutes: int) -> bool:
         return self.last_inbound_at is not None and timedelta(0) <= now - self.last_inbound_at <= timedelta(minutes=minutes)
@@ -122,9 +133,10 @@ class Case:
 
 
 class World:
-    def __init__(self, use_llm: bool | None = None, scripted_ravi: bool = False):
+    def __init__(self, use_llm: bool | None = None, scripted_ravi: bool = False, autopilot: bool = False):
         self.use_llm_override = use_llm
-        self.scripted_ravi = scripted_ravi
+        self.autopilot = autopilot            # replay: merchants and lender staff act as scripted
+        self.scripted_ravi = scripted_ravi or autopilot
         self.reset()
 
     # ------------------------------------------------------------------ setup
@@ -148,6 +160,13 @@ class World:
         self.msg_seq = 0
         self.case_seq = 0
         self.step = 0
+        self.alerts: dict[str, dict] = {}
+        self.alert_seq = 0
+        if self.autopilot:                      # merchants who tell us first, on their own schedule
+            for mid, m in self.merchants.items():
+                plan = (m.script or {}).get("plan")
+                if plan:
+                    self.scripted.append((plan["at"], mid, "plan", plan))
 
     @property
     def use_llm(self) -> bool:
@@ -206,19 +225,25 @@ class World:
     # ------------------------------------------------------------------ daily batch
     def settle(self, d: date):
         self.processed = d
+        self.detect_areas(d)
+        covered = {x for a in self.alerts.values() if a["quiet"] for x in a["merchants"]}
         for mid, loan in self.loans.items():
             st = self.states[mid]
+            self.check_open_on_pause(mid, d)
             row = run_day(loan, st, d, self.sales[mid].get(d, 0))
             self.rows[mid].append(row)
             case = self.case_for(mid)
             sig = signals.evaluate(self.sales[mid], loan, st, d)
             if case and case.is_open:
                 self.watch_case(case, d, sig, row)
+            elif sig and mid in covered:
+                pass        # the neighbourhood alert speaks for this shop: one lender decision, no separate check-in
             elif sig:
                 recent = [c for c in self.closed_cases if c.merchant_id == mid and c.closed_at and c.trigger
                           and self.now - c.closed_at < timedelta(days=7)]     # answered questions don't count
                 if not recent:
                     self.open_case(mid, sig)
+        self.watch_areas(d)
 
     def watch_case(self, case: Case, d: date, sig: dict | None, row: dict):
         mid = case.merchant_id
@@ -295,6 +320,11 @@ class World:
         m = self.merchants[case.merchant_id]
         kind = "proactive" if msg.proactive else "reply"
         results = guardrails.check_outbound(case, m, self.now, kind)
+        alert = self.alert_for(case.merchant_id)
+        if alert and kind == "proactive":       # RBI: no recovery contact during calamities
+            results.append(guardrails.decide(
+                "Local event", False, f"Reminders paused in {alert['area']} until sales there recover",
+                hold_until=guardrails.next_contact_time(self.now)))
         if case.grievance and kind == "proactive":
             results.append(guardrails.decide("Grievance open", False, "Reminders paused until the grievance is resolved",
                                              block=True))
@@ -339,7 +369,9 @@ class World:
                         f"{' (AI-phrased, checked)' if msg.author == 'llm' else ''}.", "sent")
         if not m.script or case.merchant_id == "M01" and not self.scripted_ravi:
             return
-        if msg.kind in ("checkin",) and not case.last_inbound_at:
+        if m.script.get("plan") and not self.autopilot:      # on stage, the presenter acts for her
+            return
+        if msg.kind in ("checkin",) and not case.last_inbound_at and m.script.get("text"):
             at = self.now + timedelta(minutes=m.script.get("delay_min", 30))
             self.scripted.append((at, case.merchant_id, "reply", {"text": m.script["text"]}))
         if msg.kind == "offer" and m.script.get("accept") and case.offered:
@@ -353,6 +385,10 @@ class World:
             self.inbound(mid, payload["text"], via="voice", simulated=True)
         elif action == "accept":
             self.accept(mid, payload["option"], simulated=True)
+        elif action == "plan":
+            self.plan_closure(mid, payload["reason"], payload["start"], payload["days"], simulated=True)
+        elif action == "staff_area":
+            self.approve_area(payload["alert"], by="lender staff (replay)")
 
     # ------------------------------------------------------------------ merchant input
     def inbound(self, mid: str, text: str, via: str = "text", simulated: bool = False) -> dict:
@@ -390,17 +426,19 @@ class World:
             case.state, case.outcome, case.closed_at = "closed", "Answered", self.now
             self.close(case)
 
-    def offer_parts(self, case: Case, reason: str, days: int | None) -> tuple[list, list]:
+    def offer_parts(self, case: Case, reason: str, days: int | None, start: date | None = None,
+                    kinds: tuple = ("pause", "reduce")) -> tuple[list, list]:
         mid = case.merchant_id
         loan, st = self.loans[mid], self.states[mid]
         el = policy.eligible_options(loan, st, reason, self.now.date())
         case.human_options = el["human"]
-        if not el["offer"]:
+        offer = [o for o in el["offer"] if policy.option(o)["kind"] in kinds]
+        if not offer:
             return [], el["blocked"]
-        start = self.today_deduction_date()
+        start = start or self.today_deduction_date()
         parts, cards = [("offer_intro", {})], []
         case.offered, case.offered_terms = [], {}
-        for oid in el["offer"]:
+        for oid in offer:
             t = policy.terms(oid, loan, start, days)
             f = policy.facts(t)
             k = "opt_pause" if t["kind"] == "pause" else "opt_reduce"
@@ -541,6 +579,234 @@ class World:
             return
         say([("ask_reason", {})], "ask_reason")
 
+    # ------------------------------------------------------------------ tell us first
+    def plan_closure(self, mid: str, reason: str, start: date, days: int, simulated: bool = False) -> dict:
+        """The merchant tells Sambhal about a closure before it happens. The lender's pause is booked for those days."""
+        m, loan, st = self.merchants[mid], self.loans[mid], self.states[mid]
+        if reason not in replies.PLAN_REASON:
+            return {"ok": False, "why": f"unknown reason {reason}"}
+        case = self.case_for(mid)
+        if not case or not case.is_open:
+            case = self.open_case(mid, None, inbound=True)
+        start = max(start, self.today_deduction_date())
+        days = max(1, min(int(days), 14))
+        end = start + timedelta(days=days - 1)
+        say_in = {lang: f"{replies.PLAN_REASON[reason][lang]}: " + replies.line("plan_in", lang, pause_from=start,
+                                                                                    pause_to=end) for lang in ("en", m.lang)}
+        self.msg_seq += 1
+        msg = Message(id=self.msg_seq, at=self.now, dir="in", lang=m.lang, text=say_in[m.lang], text_en=say_in["en"],
+                      kind="plan", status="received", via="tap", author="merchant", sent_at=self.now,
+                      nlu={"intent": reason, "secondary": None, "language": m.lang, "event_days": days, "matched": {},
+                           "source": "app (planned)", "summary_en": say_in["en"]})
+        msg.simulated = simulated
+        case.messages.append(msg)
+        case.last_inbound_at = self.now
+        case.reason, case.planned = reason, {"start": start.isoformat(), "end": end.isoformat(), "days": days}
+        self.note(case, f"Merchant told us in advance{' (simulated)' if simulated else ''}: {REASON_LABEL[reason]}, "
+                        f"{start:%a %d %b} to {end:%a %d %b}.", "in")
+        self.audit(mid, "Tell us first", "planned", f"{REASON_LABEL[reason]}, {start:%d %b}-{end:%d %b} ({days} days)")
+        if reason == "family_event":
+            case.quiet_until = datetime.combine(end + timedelta(days=1), config.CONTACT_START)
+            self.note(case, f"Family function: no proactive messages until {guardrails.t12(case.quiet_until, day=True)}.", "quiet")
+        op, blocked = self.offer_parts(case, reason, days, start=start, kinds=("pause",))
+        if op:
+            case.state = "offered"
+            self.note(case, "Offered from the lender's menu, starting on the planned day: " + ", ".join(case.offered) + ".", "offer")
+            self.audit(mid, "Lender's menu only", "offered", ", ".join(case.offered) + f" from {start:%d %b}")
+            self.send(case, [("plan_thanks", {})] + op, kind="reply", msg_kind="offer", options=case.cards)
+        else:
+            case.state, case.human = "with_person", True
+            why = "; ".join(f"{b['id']}: {', '.join(b['why'])}" for b in blocked) or "no option for this reason"
+            case.human_reason = f"Planned closure, but no automatic option ({why})"
+            self.note(case, case.human_reason + ".", "block")
+            self.audit(mid, "Eligibility", "not eligible", why)
+            self.send(case, [("plan_thanks", {}), ("no_option_human", {})], kind="reply", msg_kind="no_option")
+        return {"ok": True, "case": case.id, "offered": case.offered}
+
+    def check_open_on_pause(self, mid: str, d: date):
+        """Trust, then check: if a shop's sales are normal on a paused day, it was open. That day's installment is
+        collected as usual, the rest of the pause is cancelled and the catch-up shrinks to the days really shut."""
+        case = self.case_for(mid)
+        t = case.accepted_terms if case else None
+        if not (t and t.get("kind") == "pause" and d in t["pause_dates"] and case.state == "accepted"):
+            return
+        ratio = signals.ratio(self.sales[mid], d)
+        if ratio < TRUST_OPEN:
+            return
+        loan = self.loans[mid]
+        for x in t["pause_dates"]:
+            loan.adjustments.get(x, {}).pop("paused", None)
+        for x in t["catchup"]:
+            loan.adjustments.get(x, {}).pop("catchup", None)
+        kept = [x for x in t["pause_dates"] if x < d]
+        cancelled = len(t["pause_dates"]) - len(kept)
+        if kept:
+            nt = policy.terms(t["option"], loan, kept[0], len(kept))
+            for x in nt["pause_dates"]:
+                loan.adjustments.setdefault(x, {})["paused"] = 1
+            for x, amt in nt["catchup"].items():
+                loan.adjustments.setdefault(x, {})["catchup"] = amt
+            case.accepted_terms, case.relief_end = nt, kept[-1]
+            f = policy.facts(nt)
+            how = f"catch-up for {len(kept)} day(s) only, ₹{f['per_day']}/day from {nt['catchup_start']:%a %d %b}"
+            parts = [("pause_ended", {**f, "open_day": d})]
+        else:
+            case.accepted_terms, case.relief_end = None, d
+            how = "the pause wasn't needed; installments continue as usual"
+            parts = [("pause_cancelled", {"open_day": d})]
+        loan.adjustments = {k: v for k, v in loan.adjustments.items() if v}
+        self.note(case, f"Shop open on {d:%a %d %b} ({ratio:.0%} of normal) during the pause: today's installment is "
+                        f"collected as usual and {cancelled} paused day(s) are cancelled; {how}.", "good")
+        self.audit(mid, "Trust, then check", "pause ended early",
+                   f"Sales {ratio:.0%} of normal on a paused day ({d:%d %b}); {cancelled} paused day(s) cancelled; "
+                   f"{how}")
+        self.send(case, parts, kind="proactive", msg_kind="pause_update")
+
+    # ------------------------------------------------------------------ neighbourhood alerts
+    def alert_for(self, mid: str) -> dict | None:
+        return next((a for a in self.alerts.values() if a["quiet"] and mid in a["merchants"]), None)
+
+    def detect_areas(self, d: date):
+        """Many shops in one area down on the same day, the rest of the city normal: a local event, not nine
+        separate problems. Sambhal pauses reminders there and asks the lender for one decision."""
+        low = {mid for mid in self.merchants if signals.ratio(self.sales[mid], d) < AREA_LOW}
+        areas: dict[str, list] = {}
+        for mid, m in self.merchants.items():
+            areas.setdefault(m.area, []).append(mid)
+        for area, mids in areas.items():
+            if any(a["area"] == area and a["quiet"] for a in self.alerts.values()):
+                continue
+            hit = [x for x in mids if x in low]
+            others = len(self.merchants) - len(mids)
+            rest = (len(low) - len(hit)) / others if others else 1.0
+            if len(hit) >= AREA_MIN_SHOPS and len(hit) >= AREA_SHARE * len(mids) and rest < CITY_CALM:
+                self.alert_seq += 1
+                aid = f"A{self.alert_seq}"
+                avg = mean(signals.ratio(self.sales[x], d) for x in hit)
+                self.alerts[aid] = {"id": aid, "area": area, "date": d, "merchants": hit, "of": len(mids),
+                                    "avg": round(avg, 2), "rest": round(rest, 2), "status": "open", "quiet": True,
+                                    "opened_at": self.now, "approved": None}
+                self.audit(f"Area: {area}", "Neighbourhood alert", "opened",
+                           f"{len(hit)} of {len(mids)} shops at {avg:.0%} of normal on {d:%a %d %b}; "
+                           f"{rest:.0%} of shops elsewhere. Reminders paused in {area}; lender asked to decide")
+                if self.autopilot:          # replay: lender staff decide the next morning
+                    at = datetime.combine(d + timedelta(days=1), time(10, 0))
+                    self.scripted.append((at, hit[0], "staff_area", {"alert": aid}))
+
+    def watch_areas(self, d: date):
+        for a in self.alerts.values():
+            if not a["quiet"]:
+                continue
+            back = [x for x in a["merchants"] if signals.ratio(self.sales[x], d) >= TRUST_OPEN]
+            if len(back) >= AREA_SHARE * len(a["merchants"]):
+                a["quiet"], a["status"] = False, "recovered" if a["status"] == "open" else a["status"]
+                a["recovered_on"] = d
+                self.audit(f"Area: {a['area']}", "Neighbourhood alert", "recovered",
+                           f"{len(back)} of {len(a['merchants'])} shops back above {TRUST_OPEN:.0%} on {d:%a %d %b}; "
+                           f"held messages go out from 8 am")
+
+    def approve_area(self, aid: str, days: int = 3, by: str = "lender staff") -> dict:
+        a = self.alerts.get(aid)
+        if not a or a["approved"]:
+            return {"ok": False, "why": "no open alert" if not a else "already approved"}
+        start, today = self.today_deduction_date(), self.now.date()
+        opt = policy.option("AREA_PAUSE")
+        done, refused = [], []
+        for mid in a["merchants"]:
+            loan, st = self.loans[mid], self.states[mid]
+            case = self.case_for(mid)
+            if not case or not case.is_open:
+                case = self.new_case(mid, {"date": a["date"], "level": "area", "sharp": False, "ratios": {},
+                                           "baseline": 0, "reason": f"Neighbourhood alert: {a['area']}"})
+            fails = policy.check(opt, loan, st, today)
+            if fails:
+                case.state, case.human = "with_person", True
+                case.human_reason = "Area pause not allowed: " + ", ".join(fails)
+                refused.append(mid)
+                continue
+            t = policy.terms("AREA_PAUSE", loan, start, days)
+            policy.apply(loan, t, today)
+            case.reason, case.state, case.accepted, case.accepted_terms = "local_event", "accepted", "AREA_PAUSE", t
+            case.accepted_by, case.relief_end = by, t["pause_dates"][-1]
+            f = policy.facts(t)
+            self.note(case, f"{by.capitalize()} approved an area pause for {a['area']}: no deduction "
+                            f"{f['pause_from']:%a %d}-{f['pause_to']:%a %d %b}.", "good")
+            self.audit(mid, "Neighbourhood alert", "area pause applied",
+                       f"Approved by {by}: no deduction {f['pause_from']:%d %b}-{f['pause_to']:%d %b}; "
+                       f"₹{f['per_day']}/day for {f['catchup_days']} days from {f['start']:%d %b}")
+            area = {**replies.AREA_LOCAL.get(a["area"], {}), "en": a["area"]}
+            self.send(case, [("area_relief", {**f, "area": area})], kind="proactive", msg_kind="area_relief")
+            done.append(mid)
+        a["status"], a["approved"] = "approved", {"at": self.now.isoformat(), "by": by, "days": days,
+                                                  "count": len(done), "refused": refused}
+        self.audit(f"Area: {a['area']}", "Neighbourhood alert", "approved",
+                   f"{by.capitalize()} approved a {days}-day pause for {len(done)} shop(s)"
+                   + (f"; {len(refused)} not eligible, with a person" if refused else ""))
+        return {"ok": True, "applied": len(done), "refused": len(refused)}
+
+    def new_case(self, mid: str, trigger: dict) -> Case:
+        """A case opened by the lender's side (no check-in message)."""
+        self.case_seq += 1
+        case = Case(id=f"C{self.case_seq:03d}", merchant_id=mid, opened_at=self.now, trigger=trigger)
+        self.cases[case.id] = case
+        self.case_by_merchant[mid] = case.id
+        self.note(case, f"Case opened: {trigger['reason']}.", "flag")
+        return case
+
+    # ------------------------------------------------------------------ lender staff
+    def staff(self, mid: str, action: str, option: str | None = None, days: int | None = None) -> dict:
+        """Actions for cases handed to a person. Staff work inside the same rules as Sambhal."""
+        case = self.case_for(mid)
+        if not case:
+            return {"ok": False, "why": "no case"}
+        m, loan, st = self.merchants[mid], self.loans[mid], self.states[mid]
+        if action == "call":
+            if not guardrails.in_hours(self.now):
+                return {"ok": False, "why": "Outside 8 am–7 pm: calls aren't allowed now (RBI)"}
+            if case.sensitive_until and self.now < case.sensitive_until:
+                return {"ok": False, "why": f"No calls until {case.sensitive_until:%d %b} (bereavement or medical "
+                                            f"emergency). The merchant can reach out any time."}
+            if case.stopped:
+                return {"ok": False, "why": "The merchant asked us to stop contacting them"}
+            self.note(case, "Lender staff called the merchant (recorded, with notice).", "sent")
+            self.audit(mid, "Lender staff", "called", "Call logged: within 8 am–7 pm, recording notice given")
+            return {"ok": True}
+        if action == "resolve" and case.grievance:
+            case.grievance, case.state, case.outcome, case.closed_at = False, "closed", "Grievance resolved", self.now
+            self.note(case, "Grievance officer resolved the dispute. Case closed.", "good")
+            self.audit(mid, "Grievance", "resolved", "Resolved by the grievance officer")
+            self.close(case)
+            return {"ok": True}
+        if action == "clear_review" and case.review:
+            case.review, case.state, case.outcome, case.closed_at = False, "closed", "Reviewed: no action", self.now
+            self.note(case, "Lender staff reviewed the account: no action needed. Case closed.", "good")
+            self.audit(mid, "Possible diversion", "cleared", "Reviewed by lender staff: no action")
+            self.close(case)
+            return {"ok": True}
+        if action == "approve":
+            allowed = [o["id"] for o in case.human_options]
+            if option not in allowed:
+                return {"ok": False, "why": f"{option} is not one of the staff options for this case"}
+            fails = policy.check(policy.option(option), loan, st, self.now.date())
+            if fails:
+                return {"ok": False, "why": ", ".join(fails)}
+            t = policy.terms(option, loan, self.today_deduction_date(), days)
+            policy.apply(loan, t, self.now.date())
+            case.state, case.accepted, case.accepted_terms, case.accepted_by = "accepted", option, t, "lender staff"
+            case.relief_end = t["pause_dates"][-1] if t["kind"] == "pause" else t["reduced_dates"][-1]
+            case.human, case.human_reason = False, None
+            f = policy.facts(t)
+            self.note(case, f"Lender staff approved {option} ({t.get('days')} days).", "good")
+            self.audit(mid, "Lender staff", "approved", f"{option}: no deduction {f['pause_from']:%d %b}-"
+                       f"{f['pause_to']:%d %b}; ₹{f['per_day']}/day for {f['catchup_days']} days from {f['start']:%d %b}"
+                       if t["kind"] == "pause" else option)
+            if case.sensitive_until and self.now < case.sensitive_until:
+                self.note(case, "No message during the sensitive period: the pause shows in the merchant's app.", "quiet")
+            else:
+                self.send(case, [("staff_pause", f)], kind="proactive", msg_kind="staff_pause")
+            return {"ok": True}
+        return {"ok": False, "why": f"'{action}' does not apply to this case"}
+
     def accept(self, mid: str, option_id: str, via: str = "tap", simulated: bool = False) -> dict:
         case = self.case_for(mid)
         if not case or option_id not in (case.offered or []) or case.accepted:
@@ -559,7 +825,7 @@ class World:
         if (t.get("pause_dates") or t.get("reduced_dates"))[0] < start:   # accepted late: shift to the next deduction
             t = policy.terms(option_id, loan, start, t.get("days"))
         policy.apply(loan, t, self.now.date())
-        case.accepted, case.accepted_terms, case.state = option_id, t, "accepted"
+        case.accepted, case.accepted_terms, case.state, case.accepted_by = option_id, t, "accepted", "merchant"
         case.relief_end = t["pause_dates"][-1] if t["kind"] == "pause" else t["reduced_dates"][-1]
         lang = self.merchants[mid].lang
         self.msg_seq += 1
@@ -734,7 +1000,40 @@ class World:
             "messages": [x.view() | {"simulated": x.simulated} for x in c.messages],
             "timeline": c.timeline, "outcome": c.outcome,
             "closed_at": c.closed_at.isoformat() if c.closed_at else None,
+            "planned": c.planned, "accepted_by": c.accepted_by,
+            "staff_actions": self.staff_actions(c),
         }
+
+    def staff_actions(self, c: Case) -> list[dict]:
+        """What a person at the lender can do on this case right now (shown as buttons)."""
+        if not c.human and not c.review and not c.grievance:
+            return []
+        out = []
+        for o in c.human_options:
+            opt = policy.option(o["id"])
+            for n in sorted({min(3, opt["max_days"]), opt["max_days"]}):
+                out.append({"action": "approve", "option": o["id"], "days": n, "label": f"Approve a {n}-day pause"})
+        if c.grievance:
+            out.append({"action": "resolve", "label": "Mark grievance resolved"})
+        if c.review:
+            out.append({"action": "clear_review", "label": "Reviewed: no action"})
+        sensitive = c.sensitive_until and self.now < c.sensitive_until
+        out.append({"action": "call", "label": "Log a call",
+                    "disabled": (not guardrails.in_hours(self.now)) or bool(sensitive) or c.stopped,
+                    "why": "Outside 8 am–7 pm" if not guardrails.in_hours(self.now) else
+                           "No calls in a sensitive period" if sensitive else "Merchant asked us to stop" if c.stopped else ""})
+        return out
+
+    def alerts_view(self) -> list[dict]:
+        out = []
+        for a in self.alerts.values():
+            out.append({**{k: v for k, v in a.items() if k not in ("date", "opened_at", "recovered_on")},
+                        "date": a["date"].isoformat(), "opened_at": a["opened_at"].isoformat(),
+                        "recovered_on": a.get("recovered_on").isoformat() if a.get("recovered_on") else None,
+                        "shops": [{"id": x, "name": self.merchants[x].owner, "shop": self.merchants[x].shop,
+                                   "ratio": round(signals.ratio(self.sales[x], a["date"]), 2),
+                                   "overdue": self.states[x].arrears > 0} for x in a["merchants"]]})
+        return out
 
     def merchant_view(self, mid: str) -> dict:
         m, loan, st = self.merchants[mid], self.loans[mid], self.states[mid]

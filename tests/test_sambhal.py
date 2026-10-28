@@ -356,3 +356,82 @@ def test_a_question_never_hides_a_later_flag():
     assert c.trigger and any(x.kind == "checkin" and x.status == "sent" for x in c.messages)
     thread = w.merchant_view("M01")["thread"]
     assert [x["kind"] for x in thread][:2] == ["reply", "balance"]   # the phone keeps the earlier answer
+
+
+# ---------------------------------------------------------------- beyond Ravi: tell us first, trust then check
+def test_tell_us_first_books_the_pause_for_the_planned_days():
+    w = World(use_llm=False)
+    go_to(w, 10)
+    c = w.case_for("M42")
+    assert c.planned == {"start": "2026-10-30", "end": "2026-11-01", "days": 3} and c.accepted == "PAUSE_3"
+    assert [str(d) for d in c.accepted_terms["pause_dates"]] == ["2026-10-30", "2026-10-31", "2026-11-01"]
+    assert not any(x.kind == "checkin" for x in c.messages)            # she told us: no dip alarm, no check-in
+
+
+def test_trust_then_check_shrinks_the_pause_when_the_shop_reopens():
+    w = World(use_llm=False)
+    go_to(w, 13)                                                        # Sunday: Shobha's shop was open
+    c = w.case_for("M42")
+    assert [str(d) for d in c.accepted_terms["pause_dates"]] == ["2026-10-30", "2026-10-31"]
+    sun = next(r for r in w.rows["M42"] if str(r["date"]) == "2026-11-01")
+    assert not sun["paused"] and sun["deducted"] == 560 + 80             # her installment + the smaller catch-up
+    assert c.accepted_terms["paused_total"] == 1120
+    assert any(a["rule"] == "Trust, then check" for a in w.audit_log)
+
+
+# ---------------------------------------------------------------- neighbourhood alert
+def test_neighbourhood_alert_one_decision_no_checkins():
+    w = World(use_llm=False)
+    go_to(w, 11)
+    (a,) = w.alerts.values()
+    assert a["area"] == "Bellandur" and len(a["merchants"]) == 8 and a["status"] == "open"
+    shops = [f"M{n}" for n in range(43, 51)]
+    assert all(not (w.case_for(m) and any(x.kind == "checkin" for x in w.case_for(m).messages)) for m in shops)
+    go_to(w, 12)                                                        # the lender approves once
+    assert a["approved"]["count"] == 8
+    for m in shops:
+        c = w.case_for(m)
+        assert c.accepted == "AREA_PAUSE" and c.accepted_by == "lender staff"
+        assert all(x.status == "held" for x in c.messages if x.kind == "area_relief")   # quiet while the area is down
+    go_to(w, 13)
+    assert not a["quiet"] and a["recovered_on"] is not None
+    assert all(w.states[m].arrears == 0 for m in shops)
+    assert all(max(r["dpd"] for r in w.rows[m]) == 0 for m in shops)
+
+
+# ---------------------------------------------------------------- lender staff work inside the same rules
+def test_staff_actions_follow_the_rules():
+    w = World(use_llm=False)
+    go_to(w, 8)                                                         # Tue 27 Oct, 8 am
+    lakshmi = w.case_for("M02")
+    assert not w.staff("M02", "call")["ok"]                             # no calls in a bereavement
+    assert w.staff("M02", "approve", "PAUSE_7_REVIEW", 7)["ok"]
+    assert lakshmi.accepted == "PAUSE_7_REVIEW" and lakshmi.accepted_by == "lender staff"
+    assert not any(x.kind == "staff_pause" for x in lakshmi.messages)   # no message during the sensitive period
+    assert w.staff("M09", "resolve")["ok"] and w.case_for("M09").state == "closed"
+    assert w.staff("M03", "clear_review")["ok"] and w.case_for("M03").state == "closed"
+    w2 = World(use_llm=False)
+    go_to(w2, 2)                                                        # Thu 9 pm
+    w2.case_for("M01").human = True
+    assert "Outside 8 am" in w2.staff("M01", "call")["why"]
+
+
+def test_loans_older_than_the_sales_history_have_no_phantom_misses():
+    w = World(use_llm=False)
+    for mid, loan in w.loans.items():
+        missed = [r for r in w.rows[mid] if r["date"] < date(2026, 6, 15) and r["arrears"] > 0]
+        assert not missed, mid
+
+
+# ---------------------------------------------------------------- lender what-if
+def test_what_if_shows_trade_offs_and_never_leaks_into_the_live_menu():
+    before = policy.current_settings()
+    r = replay.what_if({"pause_days": 2})
+    assert r["proposed"]["with"]["merchants_overdue"] > r["current"]["with"]["merchants_overdue"]
+    assert replay.what_if({"catchup_days": 7})["proposed"]["with"]["median_peak_multiple"] > \
+        r["current"]["with"]["median_peak_multiple"]
+    assert all(not replay.what_if({k: v})["proposed"]["violations"] for k, v in
+               [("pause_days", 5), ("catchup_days", 30), ("half_share", 75), ("paid_ratio", 90)])
+    assert policy.current_settings() == before                        # the live menu is untouched
+    with pytest.raises(ValueError):
+        policy.with_settings({"pause_days": 30})                      # only the allowed values

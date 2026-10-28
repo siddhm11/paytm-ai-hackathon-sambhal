@@ -62,6 +62,7 @@ def snapshot(focus: Optional[str] = None) -> dict:
         "counts": {"merchants": len(W.merchants), "cases": len(cases), "by_state": states,
                    "with_person": sum(1 for c in cases if c.human), "held": len(W.outbox)},
         "audit_count": len(W.audit_log), "quick": replies.QUICK_REPLIES, "promises": replies.PROMISES,
+        "alerts": W.alerts_view(), "plan_reasons": replies.PLAN_REASON,
     }
 
 
@@ -84,7 +85,7 @@ class StepIn(BaseModel):
 def step(body: StepIn):
     with LOCK:
         presenter.go_to(W, body.n)
-        return snapshot("M01")
+        return snapshot(presenter.STEPS[W.step].get("focus", "M01"))
 
 
 class AdvanceIn(BaseModel):
@@ -142,6 +143,50 @@ def accept(body: AcceptIn):
     with LOCK:
         res = W.accept(body.merchant_id, body.option_id)
         return {"result": res, **snapshot(body.merchant_id)}
+
+
+class PlanIn(BaseModel):
+    merchant_id: str
+    reason: str
+    start: str
+    days: int
+
+
+@app.post("/api/plan")
+def plan(body: PlanIn):
+    with LOCK:
+        if body.merchant_id not in W.merchants:
+            raise HTTPException(404, "Unknown merchant")
+        res = W.plan_closure(body.merchant_id, body.reason, datetime.fromisoformat(body.start).date(), body.days)
+        return {"result": res, **snapshot(body.merchant_id)}
+
+
+class StaffIn(BaseModel):
+    merchant_id: str
+    action: str
+    option: Optional[str] = None
+    days: Optional[int] = None
+
+
+@app.post("/api/staff")
+def staff(body: StaffIn):
+    with LOCK:
+        if body.merchant_id not in W.merchants:
+            raise HTTPException(404, "Unknown merchant")
+        res = W.staff(body.merchant_id, body.action, body.option, body.days)
+        return {"result": res, **snapshot(body.merchant_id)}
+
+
+class AreaIn(BaseModel):
+    alert_id: str
+    days: int = 3
+
+
+@app.post("/api/area")
+def area(body: AreaIn):
+    with LOCK:
+        res = W.approve_area(body.alert_id, body.days)
+        return {"result": res, **snapshot()}
 
 
 class ConsentIn(BaseModel):
@@ -203,7 +248,21 @@ def run_evals():
 
 @app.get("/api/replay")
 def run_replay():
-    return replay.run()
+    with LOCK:
+        return replay.run()
+
+
+class WhatIfIn(BaseModel):
+    changes: dict = {}
+
+
+@app.post("/api/whatif")
+def what_if(body: WhatIfIn):
+    with LOCK:                  # the live world must not read the proposed menu while it runs
+        try:
+            return replay.what_if(body.changes)
+        except ValueError as e:
+            raise HTTPException(400, str(e))
 
 
 class SizerIn(BaseModel):

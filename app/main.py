@@ -4,6 +4,7 @@ from __future__ import annotations
 import threading
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
@@ -49,7 +50,7 @@ def case_summary(c) -> dict:
     }
 
 
-def snapshot(focus: str | None = None) -> dict:
+def snapshot(focus: Optional[str] = None) -> dict:
     focus = focus or FOCUS
     cases = sorted(W.cases.values(), key=lambda c: (c.merchant_id != "M01", c.opened_at))
     states = {}
@@ -70,7 +71,7 @@ def index():
 
 
 @app.get("/api/state")
-def state(focus: str | None = None):
+def state(focus: Optional[str] = None):
     with LOCK:
         return snapshot(focus)
 
@@ -87,8 +88,8 @@ def step(body: StepIn):
 
 
 class AdvanceIn(BaseModel):
-    to: str | None = None
-    hours: float | None = None
+    to: Optional[str] = None
+    hours: Optional[float] = None
     next_event: bool = False
 
 
@@ -161,7 +162,7 @@ def week(mid: str):
 
 
 @app.get("/api/audit")
-def audit(merchant: str | None = None, limit: int = 300):
+def audit(merchant: Optional[str] = None, limit: int = 300):
     with LOCK:
         rows = [a for a in W.audit_log if not merchant or a["merchant_id"] == merchant]
         return {"rows": rows[-limit:][::-1], "total": len(rows)}

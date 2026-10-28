@@ -1,0 +1,12 @@
+/* Bundled fonts (from @fontsource 5.3.0), so the page needs no internet. */
+@font-face { font-family: "Figtree"; font-style: normal; font-weight: 400; font-display: swap; src: url("/static/fonts/figtree-latin-400.woff2") format("woff2"); }
+@font-face { font-family: "Figtree"; font-style: normal; font-weight: 500; font-display: swap; src: url("/static/fonts/figtree-latin-500.woff2") format("woff2"); }
+@font-face { font-family: "Figtree"; font-style: normal; font-weight: 600; font-display: swap; src: url("/static/fonts/figtree-latin-600.woff2") format("woff2"); }
+@font-face { font-family: "Figtree"; font-style: normal; font-weight: 700; font-display: swap; src: url("/static/fonts/figtree-latin-700.woff2") format("woff2"); }
+@font-face { font-family: "Figtree"; font-style: normal; font-weight: 800; font-display: swap; src: url("/static/fonts/figtree-latin-800.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 500; font-display: swap; src: url("/static/fonts/jetbrains-mono-latin-500.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 600; font-display: swap; src: url("/static/fonts/jetbrains-mono-latin-600.woff2") format("woff2"); }
+@font-face { font-family: "Noto Sans Kannada"; font-style: normal; font-weight: 400; font-display: swap; src: url("/static/fonts/noto-sans-kannada-kannada-400.woff2") format("woff2"); }
+@font-face { font-family: "Noto Sans Kannada"; font-style: normal; font-weight: 600; font-display: swap; src: url("/static/fonts/noto-sans-kannada-kannada-600.woff2") format("woff2"); }
+@font-face { font-family: "Noto Sans Devanagari"; font-style: normal; font-weight: 400; font-display: swap; src: url("/static/fonts/noto-sans-devanagari-devanagari-400.woff2") format("woff2"); }
+@font-face { font-family: "Noto Sans Devanagari"; font-style: normal; font-weight: 600; font-display: swap; src: url("/static/fonts/noto-sans-devanagari-devanagari-600.woff2") format("woff2"); }

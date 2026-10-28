@@ -29,6 +29,7 @@ INTENT_GLOSS = {
     "illness": "Says they are unwell.",
     "temporary_closure": "Says the shop is closed for a few days.",
     "business_slow": "Says business is slow.",
+    "need_time": "Asks for more time to pay.",
     "business_normal": "Says business is normal, no problem.",
     "decline": "Says no thanks.",
     "accept": "Says yes.",
@@ -39,7 +40,8 @@ LANG_NAME = {"kn": "Kannada", "hi": "Hindi", "en": "English"}
 KIND_LABEL = {"checkin": "check-in", "offer": "offer", "confirm": "confirmation", "handoff": "handover message",
               "waiver_decline": "waiver reply", "dispute": "grievance acknowledgement", "stop_ack": "stop confirmation",
               "ack": "acknowledgement", "no_option": "not-eligible reply", "balance": "balance answer",
-              "ask_reason": "clarifying question", "welcome_back": "recovery message"}
+              "ask_reason": "clarifying question", "welcome_back": "recovery message",
+              "more_time": "longer-pause request reply"}
 
 
 @dataclass
@@ -473,6 +475,19 @@ class World:
                 self.note(case, case.human_reason + ".", "block")
                 self.audit(mid, "Eligibility", "not eligible", why)
                 say(pre + [("no_option_human", {})], "no_option")
+            return
+        if intent == "need_time":
+            if case.offered or case.accepted:
+                # More than the automatic menu allows: only lender staff can decide. The offer stays open.
+                case.human = True
+                staff = ", ".join(o["id"] for o in case.human_options) or "a longer pause"
+                case.human_reason = f"Asked for more time than the automatic options allow: staff may consider {staff}"
+                self.note(case, case.human_reason + ".", "block")
+                self.audit(mid, "Lender's menu only", "routed to staff", case.human_reason)
+                still_open = [("offer_still_open", {})] if case.state == "offered" else []
+                say([("more_time_staff", {})] + still_open, "more_time")
+            else:
+                say([("ask_reason_help", {})], "ask_reason")
             return
         if intent == "business_normal":
             if case.trigger and (case.trigger.get("sharp") or case.trigger.get("level") == "red"):

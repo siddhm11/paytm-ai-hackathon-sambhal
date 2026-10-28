@@ -180,3 +180,41 @@ def test_sarvam_tts_and_stt_requests(monkeypatch, tmp_path):
     assert r["transcript"] == RAVI_REPLY and r["language"] == "kn"
     url, kw = seen[-1]
     assert url.endswith("/speech-to-text") and kw["data"]["language_code"] == "kn-IN"
+
+
+# ---------------------------------------------------------------- reader safety: accepting changes the loan
+@pytest.mark.parametrize("text,intent", [
+    ("I am not ok", "unclear"),                      # "ok" with "not" is never a yes
+    ("ಸರಿ ಇಲ್ಲ", "unclear"),
+    ("ok but why only 3 days?", "need_time"),        # a question about the offer is not a yes
+    ("Please give me some more time", "need_time"),
+    ("I will pay tomorrow", "need_time"),
+    ("thoda time chahiye bhai", "need_time"),
+    ("no", "decline"),
+    ("Not now.", "decline"),
+    ("नहीं", "decline"),
+    ("ನಮ್ಮ ಮನೆಯಲ್ಲಿ ಹಬ್ಬ", "family_event"),
+    ("No sales this week, big loss", "business_slow"),
+    ("Wedding at home, need more time", "family_event"),   # a stated reason beats "more time"
+    ("हाँ, ठीक है", "accept"),
+    ("Yes, okay", "accept"),
+])
+def test_reader_safety(text, intent):
+    assert nlu.read_rules(text, "kn", date(2026, 10, 23))["intent"] == intent
+
+
+def test_more_time_goes_to_staff_and_offer_stays_open():
+    w = World(use_llm=False)
+    go_to(w, 4)                                     # Ravi has the 3-day pause on offer
+    w.inbound("M01", "ok but why only 3 days?")
+    c = w.case_for("M01")
+    assert c.state == "offered" and c.human and not c.accepted
+    assert c.messages[-1].kind == "more_time" and "still open" in c.messages[-1].text_en
+    assert w.accept("M01", "PAUSE_3")["ok"]        # he can still take the pause
+
+
+def test_bare_no_to_a_checkin_asks_why():
+    w = World(use_llm=False)
+    go_to(w, 3)                                     # check-in asked "Is everything okay?"
+    w.inbound("M01", "no")
+    assert w.case_for("M01").messages[-1].kind == "ask_reason"

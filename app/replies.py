@@ -156,6 +156,25 @@ T: dict[str, dict[str, str]] = {
         "hi": "माफ़ कीजिए, मैं समझ नहीं पाया। क्या दुकान बंद है, या धंधा कम है? आप आवाज़ में भी जवाब दे सकते हैं।",
         "kn": "ಕ್ಷಮಿಸಿ, ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ಅಂಗಡಿ ಮುಚ್ಚಿದೆಯಾ, ಅಥವಾ ವ್ಯಾಪಾರ ಕಡಿಮೆಯಾ? ನೀವು ಧ್ವನಿಯಲ್ಲೂ ಉತ್ತರಿಸಬಹುದು.",
     },
+    "ask_reason_help": {
+        "en": "We can help. To find the right option, tell us: is the shop closed, or is business slow? You can reply "
+              "by voice.",
+        "hi": "हम मदद कर सकते हैं। सही विकल्प के लिए बताइए: क्या दुकान बंद है, या धंधा कम है? आप आवाज़ में भी जवाब दे "
+              "सकते हैं।",
+        "kn": "ನಾವು ಸಹಾಯ ಮಾಡಬಹುದು. ಸರಿಯಾದ ಆಯ್ಕೆಗಾಗಿ ತಿಳಿಸಿ: ಅಂಗಡಿ ಮುಚ್ಚಿದೆಯಾ, ಅಥವಾ ವ್ಯಾಪಾರ ಕಡಿಮೆಯಾ? ನೀವು ಧ್ವನಿಯಲ್ಲೂ "
+              "ಉತ್ತರಿಸಬಹುದು.",
+    },
+    "more_time_staff": {
+        "en": "I can't give more days myself. I've asked {lender}'s team about a longer pause. They will contact you "
+              "between 8 am and 7 pm.",
+        "hi": "मैं खुद और दिन नहीं दे सकता। मैंने {lender} की टीम से लंबी छूट के बारे में पूछा है। वे सुबह 8 से शाम 7 बजे के "
+              "बीच संपर्क करेंगे।",
+        "kn": "ಹೆಚ್ಚು ದಿನಗಳನ್ನು ನಾನೇ ಕೊಡಲು ಸಾಧ್ಯವಿಲ್ಲ. ದೀರ್ಘ ವಿರಾಮದ ಬಗ್ಗೆ {lender} ತಂಡವನ್ನು ಕೇಳಿದ್ದೇನೆ. ಅವರು ಬೆಳಿಗ್ಗೆ 8 "
+              "ರಿಂದ ಸಂಜೆ 7 ರ ನಡುವೆ ಸಂಪರ್ಕಿಸುತ್ತಾರೆ.",
+    },
+    "offer_still_open": {"en": "The option above is still open if you want it.",
+                         "hi": "ऊपर वाला विकल्प अभी भी खुला है, अगर आप चाहें।",
+                         "kn": "ಮೇಲಿನ ಆಯ್ಕೆ ಈಗಲೂ ಲಭ್ಯವಿದೆ."},
     "no_option_human": {
         "en": "Right now your loan doesn't qualify for an automatic change. I've sent your case to a person at {lender}, "
               "who will contact you between 8 am and 7 pm.",

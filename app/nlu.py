@@ -16,8 +16,8 @@ from datetime import date, timedelta
 from . import llm
 
 INTENTS = ["bereavement", "medical_emergency", "stop_contact", "dispute", "request_waiver", "family_event",
-           "illness", "temporary_closure", "business_slow", "business_normal", "decline", "accept", "question",
-           "unclear"]
+           "illness", "temporary_closure", "business_slow", "need_time", "business_normal", "decline", "accept",
+           "question", "unclear"]
 SAFETY_INTENTS = {"bereavement", "medical_emergency", "stop_contact", "dispute"}
 HARDSHIP = {"family_event", "illness", "temporary_closure", "business_slow", "medical_emergency", "bereavement"}
 
@@ -60,6 +60,7 @@ KEYWORDS: dict[str, list[str]] = {
         "shaadi", "shadi", "byah", "sagai", "maduve", "nischitartha", "habba",
         "शादी", "विवाह", "सगाई", "समारोह", "फंक्शन",
         "ಮದುವೆ", "ನಿಶ್ಚಿತಾರ್ಥ", "ಕಾರ್ಯಕ್ರಮ", "ಫಂಕ್ಷನ್", "ಗೃಹಪ್ರವೇಶ", "ನಾಮಕರಣ",
+        "festival", "pooja", "tyohar", "tyohaar", "त्योहार", "पूजा", "ಹಬ್ಬ", "ಪೂಜೆ",
     ],
     "illness": [
         "fever", "sick", "unwell", "not well", "ill", "bimar", "bukhar", "tabiyat", "hushaarilla", "jvara", "jwara",
@@ -77,6 +78,14 @@ KEYWORDS: dict[str, list[str]] = {
         "barish", "baarish", "vyapara kadime", "vyapara illa", "giraki illa",
         "धंधा कम", "धंधा बहुत कम", "बिक्री कम", "ग्राहक नहीं", "मंदा", "बारिश",
         "ವ್ಯಾಪಾರ ಕಡಿಮೆ", "ವ್ಯಾಪಾರ ಇಲ್ಲ", "ಗಿರಾಕಿ ಇಲ್ಲ", "ಗಿರಾಕಿ ಕಡಿಮೆ", "ಮಳೆ",
+        "no sales", "loss", "nuksan", "nuksaan", "नुकसान", "ನಷ್ಟ",
+    ],
+    "need_time": [
+        "more time", "more days", "extra days", "some time", "few days", "why only", "pay later", "pay tomorrow",
+        "pay next week", "next week", "no money", "thoda time", "kuch din", "aur din", "zyada din", "baad mein",
+        "kal dunga", "paisa nahi", "paise nahi", "swalpa samaya", "duddu illa",
+        "थोड़ा समय", "समय चाहिए", "और दिन", "ज़्यादा दिन", "कुछ दिन", "बाद में", "पैसे नहीं", "पैसा नहीं",
+        "ಸಮಯ ಬೇಕು", "ಸ್ವಲ್ಪ ಸಮಯ", "ಹೆಚ್ಚು ದಿನ", "ಇನ್ನೂ ಕೆಲವು ದಿನ", "ನಂತರ ಕಟ್ಟುತ್ತೇನೆ", "ದುಡ್ಡು ಇಲ್ಲ",
     ],
     "business_normal": [
         "all good", "all fine", "everything is fine", "everything fine", "business is fine", "business is normal",
@@ -87,6 +96,7 @@ KEYWORDS: dict[str, list[str]] = {
     "decline": [
         "no thanks", "don't want", "do not want", "not needed", "no need", "nahi chahiye", "nahin chahiye",
         "नहीं चाहिए", "ज़रूरत नहीं", "ಬೇಡ", "ಬೇಕಿಲ್ಲ", "beda", "bekilla",
+        "not now", "abhi nahi", "अभी नहीं", "ಈಗ ಬೇಡ",
     ],
     "accept": [
         "yes", "ok", "okay", "accept", "agree", "sure", "confirm", "haan", "han", "theek hai", "chalega", "manzoor",
@@ -153,11 +163,23 @@ def event_days(text: str, today: date) -> int | None:
     return None
 
 
+# Accepting changes the loan, so a reply only counts as "yes" if it has no question, "not" or "but" in it.
+# "I am not ok" and "ok but why only 3 days?" must never apply a pause.
+NOT_A_YES = ["not", "no", "don't", "dont", "nahi", "nahin", "mat", "illa", "beda", "but", "lekin", "magar", "aadre",
+             "नहीं", "मत", "लेकिन", "मगर", "ಇಲ್ಲ", "ಬೇಡ", "ಆಗಲ್ಲ", "ಆದರೆ"]
+BARE_NO = {"no", "nope", "nahi", "nahin", "illa", "nahi ji", "नहीं", "ಇಲ್ಲ", "ಬೇಡ"}
+
+
 def read_rules(text: str, merchant_lang: str, today: date) -> dict:
     low = text.lower().strip()
+    bare = low.strip(" .!,।")
     hits = {i: [k for k in KEYWORDS[i] if _match(k, text, low)] for i in KEYWORDS}
-    if low in {"stop", "रोको", "ನಿಲ್ಲಿಸಿ"}:
-        hits["stop_contact"].append(low)
+    if bare in {"stop", "रोको", "ನಿಲ್ಲಿಸಿ"}:
+        hits["stop_contact"].append(bare)
+    if bare in BARE_NO:
+        hits["decline"].append(bare)
+    if hits["accept"] and ("?" in text or any(_match(w, text, low) for w in NOT_A_YES)):
+        hits["accept"] = []
     found = [i for i in INTENTS if hits.get(i)]
     intent = found[0] if found else "unclear"
     secondary = next((i for i in found[1:] if i in HARDSHIP), None)
@@ -178,8 +200,10 @@ Return JSON only: {"intent": one of %s,
 Definitions: bereavement = a death; medical_emergency = hospital/ICU/accident/surgery; illness = fever/unwell, not \
 hospital; family_event = wedding/function/ceremony at home; temporary_closure = shop shut for repair/travel; \
 business_slow = fewer customers/sales; business_normal = says everything is fine; request_waiver = asks to waive \
-or cut dues/interest; dispute = says a deduction is wrong or already paid; stop_contact = asks us to stop \
-messaging; accept/decline = answering an offer; question = asks about balance/amounts; unclear = none of these.
+or cut dues/interest; need_time = asks for more time or days, or to pay later, without giving a reason; \
+dispute = says a deduction is wrong or already paid; stop_contact = asks us to stop messaging; accept/decline = \
+answering an offer (a question or a "but" is not an accept); question = asks about balance/amounts; unclear = none \
+of these.
 If several apply, pick the most serious in this order: %s."""
 
 

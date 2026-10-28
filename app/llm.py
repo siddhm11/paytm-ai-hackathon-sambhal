@@ -10,6 +10,7 @@ import httpx
 from . import config
 
 STATS = {"calls": 0, "errors": 0, "last_ms": None, "last_error": None}
+MAX_TOKENS = 1500   # room for reasoning models, which spend tokens thinking before the JSON answer
 
 
 def available() -> bool:
@@ -30,11 +31,10 @@ def _extract_json(text: str) -> dict:
 
 def _openai_style(system: str, user: str, json_mode: bool) -> str:
     headers = {"Content-Type": "application/json"}
-    if config.LLM_PROVIDER == "sarvam":
+    headers["Authorization"] = f"Bearer {config.LLM_API_KEY}"
+    if config.LLM_PROVIDER == "sarvam":          # Sarvam's docs list both headers; send both
         headers["api-subscription-key"] = config.LLM_API_KEY
-    else:
-        headers["Authorization"] = f"Bearer {config.LLM_API_KEY}"
-    body = {"model": config.LLM_MODEL, "temperature": 0.2, "max_tokens": 600,
+    body = {"model": config.LLM_MODEL, "temperature": 0.2, "max_tokens": MAX_TOKENS,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
     if config.LLM_REASONING_EFFORT:
         body["reasoning_effort"] = config.LLM_REASONING_EFFORT
@@ -54,7 +54,7 @@ def _anthropic(system: str, user: str) -> str:
         config.LLM_BASE_URL.rstrip("/") + "/messages",
         headers={"x-api-key": config.LLM_API_KEY, "anthropic-version": "2023-06-01",
                  "content-type": "application/json"},
-        json={"model": config.LLM_MODEL, "max_tokens": 600, "temperature": 0.2, "system": system,
+        json={"model": config.LLM_MODEL, "max_tokens": MAX_TOKENS, "temperature": 0.2, "system": system,
               "messages": [{"role": "user", "content": user}]},
         timeout=config.LLM_TIMEOUT,
     )

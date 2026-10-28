@@ -28,11 +28,14 @@ python scripts/warm_voice_cache.py                        # caches all demo audi
 uvicorn app.main:app --port 8000
 ```
 
+Needs Python 3.10+ (3.9 also works). `run.sh` uses [uv](https://docs.astral.sh/uv/) to set up Python 3.12 if you have it.
+
 Open http://localhost:8000 and press **Next ▶** (or the → key) to walk through Ravi's week.
 `./run.sh` (Mac/Linux) or `run_windows.bat` do the install and start in one step.
 
 **No keys? It still runs.** Without keys Sambhal uses its multilingual rules reader, approved templates and
-the browser's own voice. With `OFFLINE=1` (or the Offline switch in the header) it never touches the network,
+the browser's own voice. Fonts are bundled, so the page itself needs no internet. With `OFFLINE=1` (or the Offline switch in the header) it
+never touches the network,
 which is the fallback if venue wifi fails. Audio cached by `warm_voice_cache.py` still plays offline.
 
 ## The demo: Ravi's week (presenter mode)
@@ -138,7 +141,7 @@ flowchart LR
 | Early-warning rule, policy engine, ledger maths, guardrails, audit | Merchants, loans and sales (synthetic) |
 | Sarvam speech-to-text and text-to-speech (with your key) | Paytm settlement feed and lender systems |
 | LLM understanding of free-form replies (with your key), rules reader always | Merchant replies for the 49 background shops |
-| 40 scenario checks, 62 tests, with/without replay | Delivery channel (shown as a phone, not WhatsApp/SMS) |
+| 40 scenario checks, 80 tests, with/without replay | Delivery channel (shown as a phone, not WhatsApp/SMS) |
 
 ## Configuration (`.env`)
 
@@ -154,7 +157,8 @@ flowchart LR
 ## Tests
 
 ```bash
-pytest -q                       # 62 tests: all 40 scenarios + story, replay, readers, mocked LLM and Sarvam
+pytest -q                       # 80 tests: all 40 scenarios + story, replay, readers, reply safety, server start,
+                                #           mocked LLM and Sarvam
 python scripts/run_evals.py     # human-readable report
 ```
 

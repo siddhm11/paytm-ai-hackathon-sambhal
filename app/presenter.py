@@ -35,6 +35,11 @@ STEPS = [
                 "days overdue."},
     {"at": "2026-10-27T08:00", "title": "Tuesday 8 am: case closed", "phone": "chat", "tab": "audit", "spot": "audit",
      "caption": "Sambhal confirms the recovery and closes the case. Every decision is in the lender's audit log."},
+    {"at": "2026-10-27T08:10", "title": "Prepare: Ravi turns on pay-ahead", "action": "ravi_cushion", "phone": "home",
+     "tab": "week", "spot": "cushion",
+     "caption": "Ready for the next slow week: on days Ravi sells ₹6,000 or more, ₹100 goes towards future installments. "
+                "Had it been on from the start, ₹3,800 paid ahead would have covered the wedding by itself: no pause, "
+                "no catch-up, nothing overdue."},
 ]
 
 
@@ -46,6 +51,9 @@ def run_action(w: World, action: str):
     elif action == "ravi_accept":
         if case and case.state == "offered" and not case.accepted and case.offered:
             w.accept("M01", case.offered[0], via="tap")
+    elif action == "ravi_cushion":
+        if not w.loans["M01"].cushion.get("on"):
+            w.set_cushion("M01", True)
 
 
 def go_to(w: World, n: int):

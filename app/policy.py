@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 from datetime import date, timedelta
 from functools import lru_cache
+from statistics import median
 
 from .config import DATA_DIR
 from .data import money
@@ -101,6 +102,23 @@ def apply(loan, t: dict, today: date) -> None:
             loan.adjustments.setdefault(d, {})["installment"] = t["reduced_installment"]
         loan.tenure_days += t["extra_days"]
     loan.relief_history.append(today)
+
+
+def pay_ahead(loan, sales: dict, today: date) -> dict | None:
+    """Suggested pay-ahead settings from the merchant's own last 8 weeks: a 'good day' is one above their usual
+    (median) open day; the amount is about an eighth of the installment."""
+    cfg = load_policy().get("pay_ahead") or {}
+    if not cfg.get("enabled"):
+        return None
+    days = [sales.get(today - timedelta(days=k), 0) for k in range(1, cfg["lookback_days"] + 1)]
+    open_days = [v for v in days if v > 0]
+    if not open_days:
+        return None
+    threshold = int(round(median(open_days) / 100) * 100)
+    step = cfg["round_to"]
+    amount = max(step, int(round(loan.installment * cfg["share_of_installment"] / step) * step))
+    good = sum(1 for v in days[:28] if v >= threshold)
+    return {"threshold": threshold, "amount": amount, "good_days_4w": good, "per_4w": good * amount}
 
 
 def facts(t: dict) -> dict:

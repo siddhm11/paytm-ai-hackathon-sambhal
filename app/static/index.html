@@ -77,6 +77,7 @@
         </form>
         <div class="rec-note" id="recNote" hidden></div>
       </div>
+      <div class="sheet" id="sheet" hidden></div>
       <nav class="ph-nav" aria-label="Merchant app">
         <button type="button" data-scr="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 10.5V21h6.5v-6h5v6H21V10.5Z"/></svg><span></span></button>
         <button type="button" data-scr="chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9l-5 4v-4H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/></svg><span></span><i class="dot" id="msgDot" hidden></i></button>
@@ -111,6 +112,7 @@
             <div><h3>Scenario checks</h3><p class="muted">Every guardrail and rule, replayed as a script with an expected outcome.</p></div>
             <button class="primary" id="btnEvals">Run all checks</button>
           </div>
+          <div id="promiseProof" class="promise-proof"></div>
           <div id="evalSummary" class="eval-summary"></div>
           <div id="evalList" class="eval-list"></div>
         </div>

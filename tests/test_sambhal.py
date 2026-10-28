@@ -275,3 +275,84 @@ def test_offer_preview_and_upcoming_calendar():
     go_to(w, 5)
     up = w.merchant_view("M01")["upcoming"]
     assert [u["paused"] for u in up[:3]] == [True, True, True] and up[3]["due"] == 1032
+
+
+# ---------------------------------------------------------------- pay-ahead cushion
+def test_cushion_pays_first_and_only_tops_up_on_good_days():
+    from app.data import Loan
+    from app.ledger import LoanState, run_day
+    loan = Loan(id="L", merchant_id="X", principal=1, total=10_000, installment=500, tenure_days=20,
+                disbursed_on=date(2026, 1, 1), cushion={"on": True, "threshold": 3000, "amount": 100})
+    st = LoanState(cushion=300)
+    r = run_day(loan, st, date(2026, 1, 2), 3500)          # good day: installment + ₹100 ahead
+    assert (r["deducted"], r["to_cushion"], st.cushion, st.collected) == (500, 100, 400, 600)
+    r = run_day(loan, st, date(2026, 1, 3), 0)             # shop shut: cushion pays first
+    assert (r["from_cushion"], r["arrears"], st.cushion) == (400, 100, 0)
+    r = run_day(loan, st, date(2026, 1, 4), 3500)          # good day: the ₹100 owed is cleared from sales first,
+    assert r["to_cushion"] == 100 and r["arrears"] == 0     # then ₹100 is paid ahead
+    r = run_day(loan, st, date(2026, 1, 5), 2000)          # below threshold: nothing set aside
+    assert r["to_cushion"] == 0
+
+
+def test_ravi_prepares_and_the_what_if_covers_the_wedding():
+    w = World(use_llm=False)
+    go_to(w, 9)
+    assert w.loans["M01"].cushion == {"on": True, "threshold": 6000, "amount": 100, "since": "2026-10-27"}
+    wk = {r["date"]: r for r in w.week("M01")["rows"]}
+    assert wk["2026-10-22"]["cushion"]["cushion"] == 3800                 # paid ahead by the wedding
+    assert [wk[d]["cushion"]["from_cushion"] for d in ("2026-10-23", "2026-10-24", "2026-10-25")] == [850] * 3
+    assert wk["2026-10-26"]["cushion"]["deducted"] == 850 and wk["2026-10-26"]["cushion"]["to_cushion"] == 100
+    assert all(r["cushion"]["arrears"] == 0 for r in wk.values() if r["cushion"])
+    assert wk["2026-10-26"]["without"]["deducted"] == 3400                # the plain loan never has a cushion
+
+
+def test_replay_reports_pay_ahead_only_without_violations():
+    r = replay.run()
+    assert r["violations"] == []
+    assert r["pay_ahead"]["merchants_overdue"] <= r["with"]["merchants_overdue"] < r["without"]["merchants_overdue"]
+
+
+# ---------------------------------------------------------------- Sambhal's promise: each one is proven
+def test_never_contacts_or_mentions_family():
+    m = World(use_llm=False).merchants["M01"]
+    case = type("C", (), {"stopped": False, "sensitive_until": None, "quiet_until": None, "proactive_sent": [],
+                          "last_inbound_recent": lambda self, now, mins: False})()
+    res = guardrails.check_outbound(case, m, datetime(2026, 10, 23, 10, 0), "proactive", recipient="+91 90000 00000")
+    assert guardrails.verdict(res)["action"] == "block"                       # anyone but the borrower is blocked
+    for draft in ["We will inform your family about the dues.", "Your neighbours will be told.",
+                  "आपके रिश्तेदार को बताया जाएगा।", "ನಿಮ್ಮ ಸಂಬಂಧಿಕರು ಗೆ ತಿಳಿಸುತ್ತೇವೆ."]:
+        lang = "hi" if "आप" in draft else "kn" if "ನ" in draft else "en"
+        assert not guardrails.validate_draft(draft, lang, set())["ok"], draft
+
+
+def test_consent_can_be_withdrawn_and_given():
+    w = World(use_llm=False)
+    go_to(w, 1)
+    w.set_consent("M01", False)
+    w.advance(datetime(2026, 10, 23, 8, 30))      # Ravi's flag fires Thursday; nothing may go out
+    c = w.case_for("M01")
+    assert not any(x.dir == "out" and x.status == "sent" and x.proactive for x in c.messages)
+    assert c.human and any(a["rule"] == "Consent" and a["decision"] == "withdrawn" for a in w.audit_log)
+    w.set_consent("M01", True)
+    assert w.merchants["M01"].consent and c.messages[-1].kind == "consent"
+
+
+def test_every_promise_names_checks_that_exist():
+    ids = {s["id"] for s in evals.load()}
+    names = {n for n in globals() if n.startswith("test_")}
+    for p in replies.PROMISES:
+        assert set(p["checks"]) <= ids and set(p["tests"]) <= names, p["key"]
+        assert p["checks"] or p["tests"]
+        assert all(p["text"][l] for l in ("kn", "hi", "en"))
+
+
+def test_a_question_never_hides_a_later_flag():
+    w = World(use_llm=False)
+    w.advance(datetime(2026, 10, 21, 11, 0))
+    w.inbound("M01", replies.QUICK_REPLIES["ask"]["kn"])        # Ravi asks about his loan on Wednesday morning
+    assert w.case_for("M01").state == "closed"                    # answered and closed
+    go_to(w, 3)                                                   # the Thursday flag still opens a case
+    c = w.case_for("M01")
+    assert c.trigger and any(x.kind == "checkin" and x.status == "sent" for x in c.messages)
+    thread = w.merchant_view("M01")["thread"]
+    assert [x["kind"] for x in thread][:2] == ["reply", "balance"]   # the phone keeps the earlier answer

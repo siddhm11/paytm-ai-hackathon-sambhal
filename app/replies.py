@@ -156,6 +156,45 @@ T: dict[str, dict[str, str]] = {
         "hi": "माफ़ कीजिए, मैं समझ नहीं पाया। क्या दुकान बंद है, या धंधा कम है? आप आवाज़ में भी जवाब दे सकते हैं।",
         "kn": "ಕ್ಷಮಿಸಿ, ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ಅಂಗಡಿ ಮುಚ್ಚಿದೆಯಾ, ಅಥವಾ ವ್ಯಾಪಾರ ಕಡಿಮೆಯಾ? ನೀವು ಧ್ವನಿಯಲ್ಲೂ ಉತ್ತರಿಸಬಹುದು.",
     },
+    "payahead_offer": {
+        "en": "Want to be ready for the next slow week? Turn on pay-ahead: on days you sell ₹{threshold} or more, "
+              "₹{amount} goes towards future installments. On a slow day, your installment is paid from it first. You "
+              "can turn it off any time.",
+        "hi": "अगले धीमे हफ़्ते के लिए तैयार रहना चाहते हैं? अग्रिम किस्त चालू करें: जिस दिन बिक्री ₹{threshold} या उससे "
+              "ज़्यादा हो, उस दिन ₹{amount} आगे की किस्तों में पहले से जमा होगा। कम बिक्री वाले दिन आपकी किस्त पहले उसी से "
+              "कटेगी। इसे कभी भी बंद कर सकते हैं।",
+        "kn": "ಮುಂದಿನ ಕಡಿಮೆ ವ್ಯಾಪಾರದ ವಾರಕ್ಕೆ ಸಿದ್ಧರಾಗಲು ಮುಂಗಡ ಕಂತು ಆನ್ ಮಾಡಿ: ₹{threshold} ಅಥವಾ ಹೆಚ್ಚು ಮಾರಾಟವಾದ ದಿನ, "
+              "₹{amount} ಮುಂದಿನ ಕಂತುಗಳಿಗೆ ಮುಂಚಿತವಾಗಿ ಜಮೆಯಾಗುತ್ತದೆ. ವ್ಯಾಪಾರ ಕಡಿಮೆ ಇದ್ದ ದಿನ ನಿಮ್ಮ ಕಂತು ಮೊದಲು ಅದರಿಂದಲೇ "
+              "ಕಟ್ಟಲಾಗುತ್ತದೆ. ಯಾವಾಗ ಬೇಕಾದರೂ ಆಫ್ ಮಾಡಬಹುದು.",
+    },
+    "payahead_on": {
+        "en": "Pay-ahead is on. On days you sell ₹{threshold} or more, ₹{amount} goes towards future installments. You "
+              "can turn it off any time from your home screen.",
+        "hi": "अग्रिम किस्त चालू हो गई है। जिस दिन बिक्री ₹{threshold} या उससे ज़्यादा हो, ₹{amount} आगे की किस्तों में जमा "
+              "होगा। इसे कभी भी होम स्क्रीन से बंद कर सकते हैं।",
+        "kn": "ಮುಂಗಡ ಕಂತು ಆನ್ ಆಗಿದೆ. ₹{threshold} ಅಥವಾ ಹೆಚ್ಚು ಮಾರಾಟವಾದ ದಿನ ₹{amount} ಮುಂದಿನ ಕಂತುಗಳಿಗೆ ಜಮೆಯಾಗುತ್ತದೆ. "
+              "ಮುಖಪುಟದಿಂದ ಯಾವಾಗ ಬೇಕಾದರೂ ಆಫ್ ಮಾಡಬಹುದು.",
+    },
+    "payahead_off": {
+        "en": "Pay-ahead is off. The ₹{balance} already paid ahead still counts towards your loan.",
+        "hi": "अग्रिम किस्त बंद कर दी गई है। पहले से जमा ₹{balance} आपके लोन में गिना जाएगा।",
+        "kn": "ಮುಂಗಡ ಕಂತು ಆಫ್ ಆಗಿದೆ. ಈಗಾಗಲೇ ಮುಂಚಿತವಾಗಿ ಕಟ್ಟಿದ ₹{balance} ನಿಮ್ಮ ಸಾಲಕ್ಕೆ ಸೇರುತ್ತದೆ.",
+    },
+    "consent_on": {
+        "en": "Thank you. Sambhal will watch your daily sales and message you only when it can help, between 8 am and "
+              "7 pm.",
+        "hi": "धन्यवाद। संभल आपकी रोज़ की बिक्री पर नज़र रखेगा और सिर्फ़ तभी, सुबह 8 से शाम 7 बजे के बीच, संदेश भेजेगा जब "
+              "मदद कर सके।",
+        "kn": "ಧನ್ಯವಾದಗಳು. ಸಂಭಲ್ ನಿಮ್ಮ ದಿನದ ಮಾರಾಟವನ್ನು ಗಮನಿಸುತ್ತದೆ ಮತ್ತು ಸಹಾಯ ಮಾಡಲು ಸಾಧ್ಯವಾದಾಗ ಮಾತ್ರ, ಬೆಳಿಗ್ಗೆ 8 ರಿಂದ ಸಂಜೆ "
+              "7 ರ ನಡುವೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತದೆ.",
+    },
+    "consent_off": {
+        "en": "Okay. Sambhal will not send you messages. If needed, a person from {lender} may call you between 8 am and "
+              "7 pm.",
+        "hi": "ठीक है। संभल आपको संदेश नहीं भेजेगा। ज़रूरत हो तो {lender} से कोई सुबह 8 से शाम 7 बजे के बीच कॉल कर सकता है।",
+        "kn": "ಸರಿ. ಸಂಭಲ್ ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಅಗತ್ಯವಿದ್ದರೆ {lender} ನ ಒಬ್ಬರು ಬೆಳಿಗ್ಗೆ 8 ರಿಂದ ಸಂಜೆ 7 ರ ನಡುವೆ ಕರೆ "
+              "ಮಾಡಬಹುದು.",
+    },
     "human_ack": {
         "en": "Sure. I've asked a person from {lender} to call you. They call only between 8 am and 7 pm.",
         "hi": "ज़रूर। मैंने {lender} के एक व्यक्ति से आपको कॉल करने को कहा है। वे सिर्फ़ सुबह 8 से शाम 7 बजे के बीच कॉल "
@@ -230,6 +269,41 @@ QUICK_REPLIES = {
     "person": {"kn": "ನಾನು ಒಬ್ಬ ವ್ಯಕ್ತಿಯೊಂದಿಗೆ ಮಾತನಾಡಬೇಕು", "hi": "मुझे किसी व्यक्ति से बात करनी है",
                "en": "I want to talk to a person"},
 }
+# Sambhal's promise to the merchant. Each one is a rule in code (guardrails.py, nlu.py, world.py) and is proven by
+# the scenario checks and unit tests listed with it (the Proof tab shows them passing).
+PROMISES = [
+    {"key": "family", "icon": "🏠", "rule": "Borrower only · AI message check", "checks": ["V02", "V03"],
+     "tests": ["test_never_contacts_or_mentions_family"],
+     "text": {"en": "We never contact your family, friends or neighbours.",
+              "hi": "हम आपके परिवार, दोस्तों या पड़ोसियों से कभी संपर्क नहीं करेंगे।",
+              "kn": "ನಿಮ್ಮ ಕುಟುಂಬ, ಸ್ನೇಹಿತರು ಅಥವಾ ನೆರೆಹೊರೆಯವರನ್ನು ನಾವು ಎಂದಿಗೂ ಸಂಪರ್ಕಿಸುವುದಿಲ್ಲ."}},
+    {"key": "hours", "icon": "🕗", "rule": "Contact hours", "checks": ["C01", "C02", "C03", "C04"], "tests": [],
+     "text": {"en": "We contact you only between 8 am and 7 pm.",
+              "hi": "हम सिर्फ़ सुबह 8 से शाम 7 बजे के बीच संपर्क करेंगे।",
+              "kn": "ಬೆಳಿಗ್ಗೆ 8 ರಿಂದ ಸಂಜೆ 7 ರ ನಡುವೆ ಮಾತ್ರ ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತೇವೆ."}},
+    {"key": "quiet", "icon": "🤫", "rule": "Sensitive situation · Family function",
+     "checks": ["S01", "S02", "S05", "S07", "S08"], "tests": [],
+     "text": {"en": "We stay quiet during a death, a hospital stay or a wedding in your family.",
+              "hi": "परिवार में मृत्यु, अस्पताल या शादी के समय हम चुप रहेंगे।",
+              "kn": "ಕುಟುಂಬದಲ್ಲಿ ಸಾವು, ಆಸ್ಪತ್ರೆ ಅಥವಾ ಮದುವೆ ಇದ್ದಾಗ ನಾವು ಸುಮ್ಮನಿರುತ್ತೇವೆ."}},
+    {"key": "person", "icon": "📞", "rule": "Talk to a person", "checks": [],
+     "tests": ["test_talk_to_a_person_keeps_the_offer_open", "test_one_tap_replies_read_correctly"],
+     "text": {"en": "You can always talk to a person. Just ask.",
+              "hi": "आप कभी भी किसी व्यक्ति से बात कर सकते हैं। बस कहिए।",
+              "kn": "ನೀವು ಯಾವಾಗ ಬೇಕಾದರೂ ಒಬ್ಬ ವ್ಯಕ್ತಿಯೊಂದಿಗೆ ಮಾತನಾಡಬಹುದು. ಕೇಳಿದರೆ ಸಾಕು."}},
+    {"key": "menu", "icon": "🧾", "rule": "Lender's menu only", "checks": ["P01", "P02", "P06", "P07", "P10"], "tests": [],
+     "text": {"en": "Help from Sambhal never costs extra, and every change to your loan is explained in your language.",
+              "hi": "संभल की मदद का कोई अतिरिक्त शुल्क नहीं है, और लोन में हर बदलाव आपकी भाषा में समझाया जाएगा।",
+              "kn": "ಸಂಭಲ್ ಸಹಾಯಕ್ಕೆ ಯಾವುದೇ ಹೆಚ್ಚುವರಿ ಶುಲ್ಕವಿಲ್ಲ. ನಿಮ್ಮ ಸಾಲದಲ್ಲಿನ ಪ್ರತಿಯೊಂದು ಬದಲಾವಣೆಯನ್ನು ನಿಮ್ಮ ಭಾಷೆಯಲ್ಲಿ "
+                    "ವಿವರಿಸುತ್ತೇವೆ."}},
+    {"key": "stop", "icon": "✋", "rule": "Stop request · Consent", "checks": ["S09", "I01"],
+     "tests": ["test_consent_can_be_withdrawn_and_given"],
+     "text": {"en": "Say STOP, or switch Sambhal off, any time, and we stop.",
+              "hi": "कभी भी STOP कहिए या संभल बंद कीजिए, हम रुक जाएँगे।",
+              "kn": "ಯಾವಾಗ ಬೇಕಾದರೂ STOP ಎಂದು ಹೇಳಿ ಅಥವಾ ಸಂಭಲ್ ಆಫ್ ಮಾಡಿ, ನಾವು ನಿಲ್ಲಿಸುತ್ತೇವೆ."}},
+]
+
+PAYAHEAD_LABEL = {"kn": "ಮುಂಗಡ ಕಂತು", "hi": "अग्रिम किस्त", "en": "Pay-ahead"}
 QUICK_INTENT = {"family": "family_event", "illness": "illness", "closed": "temporary_closure", "slow": "business_slow",
                 "hospital": "medical_emergency", "fine": "business_normal", "more": "need_time", "ask": "question",
                 "person": "talk_to_person"}

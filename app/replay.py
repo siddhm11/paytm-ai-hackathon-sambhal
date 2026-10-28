@@ -7,11 +7,12 @@ This shows how a pilot would be measured. It is not a result from real merchants
 """
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date, datetime, time, timedelta
 from functools import lru_cache
 from statistics import median
 
-from . import guardrails, policy
+from . import guardrails, ledger, policy
 from .world import World
 
 START = date(2026, 10, 21)
@@ -27,7 +28,10 @@ def _overdue(rows, installment):
 
 def violations(w: World) -> list[dict]:
     """Independent audit of every message the agent sent."""
-    menu = {o["id"]: o for o in policy.load_policy()["options"]}
+    pol = policy.load_policy()
+    menu = {o["id"]: o for o in pol["options"]}
+    if (pol.get("pay_ahead") or {}).get("enabled"):      # the merchant's own opt-in, offered after recovery
+        menu["PAYAHEAD"] = {"requires_human": False}
     out = []
     for c in w.cases.values():
         m = w.merchants[c.merchant_id]
@@ -71,10 +75,17 @@ def run() -> dict:
         actual = [r for r in w.rows[mid] if START <= r["date"] <= END]
         cf = w.counterfactual(mid, START, END)
         a, b = _overdue(actual, w.loans[mid].installment), _overdue(cf, w.loans[mid].installment)
+        # Pay-ahead only: the plain loan with the cushion on since disbursal and no other help. Settings come from
+        # sales before the window, so nothing is learnt from the days being tested.
+        loan = w.loans[mid]
+        cs = policy.pay_ahead(loan, w.sales[mid], START)
+        ghost = replace(loan, adjustments={}, cushion={"on": True, "threshold": cs["threshold"], "amount": cs["amount"]})
+        _, prow = ledger.replay(ghost, w.sales[mid], loan.disbursed_on + timedelta(days=1), END, {})
+        pa = _overdue([r for r in prow if START <= r["date"] <= END], loan.installment)
         per.append({
             "merchant_id": mid, "merchant": m.owner, "shop": m.shop, "lang": m.lang,
             "reason": c.reason, "state": c.state, "accepted": c.accepted, "human": c.human,
-            "with": a, "without": b,
+            "with": a, "without": b, "pay_ahead": pa,
             "messages_sent": sum(1 for x in c.messages if x.dir == "out" and x.status == "sent"),
             "proactive_sent": sum(1 for x in c.messages if x.dir == "out" and x.status == "sent" and x.proactive),
         })
@@ -91,7 +102,7 @@ def run() -> dict:
 
     return {
         "window": [START.isoformat(), END.isoformat()], "merchants_total": len(w.merchants),
-        "flagged": len(per), "with": agg("with"), "without": agg("without"),
+        "flagged": len(per), "with": agg("with"), "without": agg("without"), "pay_ahead": agg("pay_ahead"),
         "relief_accepted": sum(1 for p in per if p["accepted"]),
         "handed_to_person": sum(1 for p in per if p["human"]),
         "proactive_messages": sum(p["proactive_sent"] for p in per),

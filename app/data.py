@@ -67,6 +67,7 @@ class Loan:
     disbursed_on: date
     relief_history: list = field(default_factory=list)   # dates relief was granted
     adjustments: dict = field(default_factory=dict)      # date -> {"paused":1} | {"installment":x} | {"catchup":x}
+    cushion: dict = field(default_factory=dict)          # pay-ahead: {"on": True, "threshold": ₹, "amount": ₹}
 
 
 def money(x: float) -> str:

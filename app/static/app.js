@@ -59,8 +59,8 @@ async function load(f) {
   render();
 }
 function maxOutId() {
-  const c = S?.merchant?.case; if (!c) return 0;
-  return Math.max(0, ...c.messages.filter(m => m.dir === "out").map(m => m.id));
+  const th = S?.merchant?.thread || [];
+  return Math.max(0, ...th.filter(m => m.dir === "out").map(m => m.id));
 }
 function render() {
   renderTop(); renderStory(); renderPhone(); renderMCard(); renderCases();
@@ -123,6 +123,12 @@ const UI = {
     last7: "Last 7 days", next7: "Next 7 days", no_msgs: "No messages. Sambhal only writes when it can help.",
     type_here: "Type a reply…", l_ok: "Deducted", l_pz: "Paused", l_od: "Overdue", l_cu: "With catch-up",
     new_loan: "Thinking of a new loan? Check what fits",
+    payahead: "Pay-ahead", turn_on: "Turn on", turn_off: "Turn off", is_on: "On", paid_ahead: "Paid ahead",
+    covers: "covers about {n} days", pa_rule: "₹{a} on days you sell ₹{t} or more", pa_pitch: "Be ready for slow days",
+    l_cs: "From pay-ahead",
+    promise: "Sambhal's promise", listen: "Listen", consent_yes: "You said yes to Sambhal messages",
+    consent_no: "Sambhal messages are off", stop_msgs: "Stop Sambhal messages", start_help: "Turn on Sambhal help",
+    help_off_note: "A person from the lender will call if needed.",
   },
   kn: {
     home: "ಮುಖಪುಟ", messages: "ಸಂದೇಶಗಳು", loan: "ನನ್ನ ಸಾಲ", hello: "ನಮಸ್ಕಾರ", last_day: "ಕೊನೆಯ ದಿನದ ಲೆಕ್ಕ", sales: "ಮಾರಾಟ",
@@ -137,6 +143,12 @@ const UI = {
     last7: "ಕಳೆದ 7 ದಿನಗಳು", next7: "ಮುಂದಿನ 7 ದಿನಗಳು", no_msgs: "ಯಾವುದೇ ಸಂದೇಶವಿಲ್ಲ. ಸಹಾಯ ಮಾಡಲು ಸಾಧ್ಯವಾದಾಗ ಮಾತ್ರ ಸಂಭಲ್ ಬರೆಯುತ್ತದೆ.",
     type_here: "ಉತ್ತರ ಬರೆಯಿರಿ…", l_ok: "ಕಡಿತವಾಗಿದೆ", l_pz: "ವಿರಾಮ", l_od: "ಬಾಕಿ", l_cu: "ಬಾಕಿ ಕಂತು ಸೇರಿ",
     new_loan: "ಹೊಸ ಸಾಲ ಬೇಕೇ? ಎಷ್ಟು ಸರಿ ಎಂದು ನೋಡಿ",
+    payahead: "ಮುಂಗಡ ಕಂತು", turn_on: "ಆನ್ ಮಾಡಿ", turn_off: "ಆಫ್ ಮಾಡಿ", is_on: "ಆನ್ ಆಗಿದೆ", paid_ahead: "ಮುಂಚಿತವಾಗಿ ಕಟ್ಟಿದ್ದು",
+    covers: "ಸುಮಾರು {n} ದಿನದ ಕಂತು", pa_rule: "₹{t} ಅಥವಾ ಹೆಚ್ಚು ಮಾರಾಟವಾದ ದಿನ ₹{a}", pa_pitch: "ಕಡಿಮೆ ವ್ಯಾಪಾರದ ದಿನಗಳಿಗೆ ಸಿದ್ಧರಾಗಿ",
+    l_cs: "ಮುಂಗಡದಿಂದ",
+    promise: "ಸಂಭಲ್‌ನ ಭರವಸೆ", listen: "ಕೇಳಿ", consent_yes: "ನೀವು ಸಂಭಲ್ ಸಂದೇಶಗಳಿಗೆ ಒಪ್ಪಿದ್ದೀರಿ",
+    consent_no: "ಸಂಭಲ್ ಸಂದೇಶಗಳು ಆಫ್ ಆಗಿವೆ", stop_msgs: "ಸಂಭಲ್ ಸಂದೇಶಗಳನ್ನು ನಿಲ್ಲಿಸಿ", start_help: "ಸಂಭಲ್ ಸಹಾಯ ಆನ್ ಮಾಡಿ",
+    help_off_note: "ಅಗತ್ಯವಿದ್ದರೆ ಸಾಲದಾತರ ಕಡೆಯಿಂದ ಒಬ್ಬರು ಕರೆ ಮಾಡುತ್ತಾರೆ.",
   },
   hi: {
     home: "होम", messages: "संदेश", loan: "मेरा लोन", hello: "नमस्ते", last_day: "पिछले दिन का हिसाब", sales: "बिक्री",
@@ -151,6 +163,12 @@ const UI = {
     last7: "पिछले 7 दिन", next7: "अगले 7 दिन", no_msgs: "कोई संदेश नहीं। संभल तभी लिखता है जब मदद कर सके।",
     type_here: "जवाब लिखें…", l_ok: "कटा", l_pz: "छूट", l_od: "बाकी", l_cu: "बकाया सहित",
     new_loan: "नया लोन चाहिए? देखें कितना सही है",
+    payahead: "अग्रिम किस्त", turn_on: "चालू करें", turn_off: "बंद करें", is_on: "चालू है", paid_ahead: "पहले से जमा",
+    covers: "लगभग {n} दिन की किस्त", pa_rule: "₹{t} या ज़्यादा बिक्री वाले दिन ₹{a}", pa_pitch: "धीमे दिनों के लिए तैयार रहें",
+    l_cs: "अग्रिम से",
+    promise: "संभल का वादा", listen: "सुनें", consent_yes: "आपने संभल संदेशों के लिए हाँ कहा है",
+    consent_no: "संभल संदेश बंद हैं", stop_msgs: "संभल संदेश बंद करें", start_help: "संभल मदद चालू करें",
+    help_off_note: "ज़रूरत हो तो लेंडर की ओर से कोई कॉल करेगा।",
   },
 };
 const LOCALE = { kn: "kn-IN", hi: "hi-IN", en: "en-IN" };
@@ -161,6 +179,7 @@ const seenOut = {};         // per merchant: newest outbound message seen on the
 
 const ML = () => S.merchant.lang;
 function t(k, lang = ML()) { return (UI[lang] || UI.en)[k] ?? UI.en[k] ?? k; }
+function tf(k, vars, lang = ML()) { return t(k, lang).replace(/\{(\w+)\}/g, (_, v) => vars[v] ?? ""); }
 function tt(k) {
   const lang = ML(), en = $("#enToggle").checked && lang !== "en";
   return `<span ${langAttr(lang)}>${esc(t(k))}</span>${en ? `<small class="en-sub">${esc(t(k, "en"))}</small>` : ""}`;
@@ -209,18 +228,52 @@ function renderHome() {
       alert = `<div class="h-alert person"><span class="ic">📞</span><span>${tt("person_call")}</span></div>`;
     }
   }
-  const lastCard = last ? `<div class="h-card h-last"><h4>${tt("last_day")} · <span ${langAttr(m.lang)}>${esc(ldate(last.date))}</span></h4>
+  const lastDed = last && (last.paused ? `<span ${langAttr(m.lang)}>${esc(t("paused"))}</span>` : last.from_cushion ? `<span ${langAttr(m.lang)}>${esc(t("l_cs"))}</span>` : inr(last.deducted));
+  const lastCard = last ? `<div class="h-card h-last"><h4>${tt("last_day")}</h4><div class="h-date" ${langAttr(m.lang)}>${esc(ldate(last.date))}</div>
       <div class="h-row"><span class="lbl">${tt("sales")}</span><span class="h-big">${inr(last.sales)}</span></div>
-      <div class="h-row"><span class="lbl">${tt("deducted")}</span><span class="h-big ${last.paused ? "zero" : ""}">${last.paused ? `<span ${langAttr(m.lang)}>${esc(t("paused"))}</span>` : inr(last.deducted)}</span></div></div>` : "";
+      <div class="h-row"><span class="lbl">${tt("deducted")}</span><span class="h-big ${last.paused || last.from_cushion ? "zero" : ""}">${lastDed}</span></div></div>` : "";
   let nextVal = next.paused ? `<span ${langAttr(m.lang)}>${esc(t("paused"))}</span>` : inr(next.due);
   let nextNote = next.paused ? "" : next.arrears ? `${t("pending")} ${inr(next.arrears)}` : next.catchup ? `${inr(next.installment)} + ${inr(next.catchup)} ${t("catchup")}` : "";
-  const nextCard = `<div class="h-card h-next"><h4>${tt("next_ded")} · <span ${langAttr(m.lang)}>${esc(ldate(next.date))}</span></h4>
+  const nextCard = `<div class="h-card h-next"><h4>${tt("next_ded")}</h4><div class="h-date" ${langAttr(m.lang)}>${esc(ldate(next.date))}</div>
       <div class="h-row"><span class="h-big ${next.paused ? "zero" : ""}">${nextVal}</span></div>${nextNote ? `<div class="h-note" ${langAttr(m.lang)}>${esc(nextNote)}</div>` : ""}</div>`;
   const acts = [["closure", "tell_closure", "🗓️"], ["ask", "ask_loan", "❓"], ["person", "talk_person", "📞"]]
     .map(([k, label, ic]) => `<button class="h-act ${k}" data-act="${k}"><span class="ic">${ic}</span><span>${tt(label)}</span></button>`).join("");
-  $("#scrHome").innerHTML = `<div class="h-greet" ${langAttr(m.lang)}>${esc(t("hello"))}, ${esc(first)}</div>${alert}${lastCard}${nextCard}<div class="h-acts">${acts}</div>`;
+  const cu = m.cushion;
+  let cush = "";
+  if (cu.on) {
+    cush = `<div class="h-card h-cush"><h4>${tt("payahead")} · ${tt("is_on")}</h4>
+      <div class="h-row"><span class="lbl">${tt("paid_ahead")}</span><span class="h-big">${inr(cu.balance)}</span></div>
+      <div class="h-note" ${langAttr(m.lang)}>${cu.covers_days ? esc(tf("covers", { n: cu.covers_days })) + " · " : ""}${esc(tf("pa_rule", { a: inr(cu.amount).slice(1), t: inr(cu.threshold).slice(1) }))}</div>
+      <button class="linkish" data-cush="off" ${langAttr(m.lang)}>${esc(t("turn_off"))}</button></div>`;
+  } else if (cu.suggest) {
+    cush = `<div class="h-card h-cush off"><h4>${tt("pa_pitch")}</h4>
+      <div class="h-note" ${langAttr(m.lang)}>${esc(t("payahead"))}: ${esc(tf("pa_rule", { a: inr(cu.suggest.amount).slice(1), t: inr(cu.suggest.threshold).slice(1) }))}</div>
+      <button class="cush-on" data-cush="on" ${langAttr(m.lang)}>${esc(t("turn_on"))}</button></div>`;
+  }
+  const consent = m.consent ? "" : `<div class="h-card h-consent"><h4>${tt("consent_no")}</h4><div class="h-note" ${langAttr(m.lang)}>${esc(t("help_off_note"))}</div>
+      <button class="cush-on" data-consent="on" ${langAttr(m.lang)}>${esc(t("start_help"))}</button></div>`;
+  const promise = `<button class="h-promise" data-sheet="promise"><span class="ic">🤝</span><span>${tt("promise")}</span><span class="chev">›</span></button>`;
+  $("#scrHome").innerHTML = `<div class="h-greet" ${langAttr(m.lang)}>${esc(t("hello"))}, ${esc(first)}</div>${consent}${alert}<div class="h-pair">${lastCard}${nextCard}</div>${cush}<div class="h-acts">${acts}</div>${promise}`;
+  $$("[data-consent]", $("#scrHome")).forEach(b => (b.onclick = () => setConsent(b.dataset.consent === "on")));
+  $$("[data-sheet]", $("#scrHome")).forEach(b => (b.onclick = () => openPromise()));
+  $$("[data-cush]", $("#scrHome")).forEach(b => (b.onclick = () => setCushion(b.dataset.cush === "on")));
   $$("[data-go]", $("#scrHome")).forEach(b => (b.onclick = () => setScreen(b.dataset.go)));
   $$("[data-act]", $("#scrHome")).forEach(b => (b.onclick = () => homeAction(b.dataset.act)));
+}
+
+function openPromise() {
+  const m = S.merchant, lang = m.lang, showEn = $("#enToggle").checked && lang !== "en";
+  const items = S.promises.map(p => `<li><span class="ic">${p.icon}</span><span><span ${langAttr(lang)}>${esc(p.text[lang])}</span>${showEn ? `<small class="en-sub">${esc(p.text.en)}</small>` : ""}</span></li>`).join("");
+  const sheet = $("#sheet");
+  sheet.innerHTML = `<div class="sh-head"><b>${tt("promise")}</b><button class="sh-x" aria-label="Close">✕</button></div>
+    <button class="vn" id="promiseListen"><span class="pl"></span><span class="wave">${wave(7)}</span><span class="dur" ${langAttr(lang)}>${esc(t("listen"))}</span></button>
+    <ul class="promises">${items}</ul>
+    <div class="sh-consent"><span>${tt(m.consent ? "consent_yes" : "consent_no")}</span>
+      <button data-consent="${m.consent ? "off" : "on"}" ${langAttr(lang)}>${esc(t(m.consent ? "stop_msgs" : "start_help"))}</button></div>`;
+  sheet.hidden = false;
+  $(".sh-x", sheet).onclick = () => (sheet.hidden = true);
+  $("#promiseListen").onclick = () => playText(S.promises.map(p => p.text[lang]).join(" "), lang, $("#promiseListen"));
+  $$("[data-consent]", sheet).forEach(b => (b.onclick = () => { sheet.hidden = true; setConsent(b.dataset.consent === "on"); }));
 }
 
 function homeAction(k) {
@@ -233,11 +286,11 @@ function renderChat() {
   const chat = $("#chat");
   const atBottom = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 60;
   let html = "";
-  if (!c || !c.messages.length) {
+  if (!m.thread.length) {
     html = `<p class="empty">${!m.consent ? "No messages: this merchant didn't opt in, so a person at the lender will call instead." : tt("no_msgs")}</p>`;
   } else {
     let day = null;
-    for (const msg of c.messages) {
+    for (const msg of m.thread) {
       const at = msg.sent_at || msg.at;
       if (msg.dir === "out" && msg.status === "held") {
         html += `<div class="sysline hold">⏸ Sambhal has a message ready. Held until ${fmtDayTime(msg.held_until)}: ${esc(HOLD_WHY[msg.held_reason] || msg.held_reason || "contact rules")}.</div>`;
@@ -253,13 +306,14 @@ function renderChat() {
       if (msg.dir === "out" && msg.held_once) {
         html += `<div class="sysline info">Waited for ${esc(HOLD_WHY[msg.held_reason] || msg.held_reason)}; delivered ${fmtTime(msg.sent_at)}.</div>`;
       }
-      html += msg.dir === "out" ? outBubble(msg, c, showEn) : inBubble(msg, showEn);
+      html += msg.dir === "out" ? outBubble(msg, showEn) : inBubble(msg, showEn);
     }
   }
   chat.innerHTML = html;
   if (atBottom || busy) chat.scrollTop = chat.scrollHeight;
   $$(".vn", chat).forEach(b => (b.onclick = () => playMsg(+b.dataset.id)));
-  $$(".opt button.accept", chat).forEach(b => (b.onclick = () => acceptOpt(b.dataset.opt)));
+  $$(".opt button.accept[data-opt]", chat).forEach(b => (b.onclick = () => acceptOpt(b.dataset.opt)));
+  $$(".opt button.accept[data-cush]", chat).forEach(b => (b.onclick = () => setCushion(true)));
 }
 
 function wave(id) {
@@ -269,12 +323,18 @@ function wave(id) {
 }
 function fmtDur(s) { return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
 
-function outBubble(msg, c, showEn) {
+function outBubble(msg, showEn) {
   const tag = msg.author === "llm" ? `<span class="tag ai">AI-phrased · checked</span>` : `<span class="tag tpl">Approved template</span>`;
   const secs = Math.max(4, Math.round(((msg.header || "").length + msg.text.length) / 14));
   let opts = "";
   for (const o of msg.options || []) {
-    const taken = c.accepted === o.id, can = c.state === "offered" && !c.accepted;
+    if (o.kind === "payahead") {
+      const on = S.merchant.cushion.on;
+      opts += `<div class="opt ${on ? "taken" : ""}"><b ${langAttr(msg.lang)}>${esc(o.label)}</b>${showEn && msg.lang !== "en" ? `<p>${esc(o.label_en)}</p>` : ""}
+        ${on ? `<span class="ok">✓ ${tt("is_on")}</span>` : `<button class="accept" data-cush="on" ${langAttr(msg.lang)}>${esc(t("turn_on", msg.lang))}</button>`}</div>`;
+      continue;
+    }
+    const taken = msg.case_accepted === o.id, can = msg.case_state === "offered" && !msg.case_accepted;
     const pv = (o.preview || []).slice(0, 5).map(p => `<span class="pv-c ${p.kind}"><i ${langAttr(msg.lang)}>${esc(lday(p.date))}</i><b>${p.amount ? inr(p.amount) : "₹0"}</b></span>`).join("");
     opts += `<div class="opt ${taken ? "taken" : ""}"><b ${langAttr(msg.lang)}>${esc(o.label)}</b>${showEn && msg.lang !== "en" ? `<p>${esc(o.label_en)}</p>` : ""}
       ${pv ? `<div class="pv">${pv}</div>` : ""}
@@ -320,8 +380,8 @@ function renderLoan() {
   const m = S.merchant, Lo = m.loan;
   const paid = Lo.total ? Lo.collected / Lo.total : 0;
   const past = m.recent.slice(-7).map(r => {
-    const cls = r.paused ? "pz" : r.arrears > 0 ? "od" : "ok";
-    const val = r.paused ? t("paused") : r.arrears > 0 ? inr(r.arrears) : inr(r.deducted);
+    const cls = r.paused ? "pz" : r.arrears > 0 ? "od" : r.from_cushion ? "cs" : "ok";
+    const val = r.paused ? t("paused") : r.arrears > 0 ? inr(r.arrears) : r.from_cushion ? inr(r.from_cushion + r.deducted) : inr(r.deducted);
     return `<div class="cal-c ${cls}"><i ${langAttr(m.lang)}>${esc(ldate(r.date, { weekday: "short" }))}</i><b>${D(r.date).getDate()}</b><em ${langAttr(m.lang)}>${esc(val)}</em></div>`;
   }).join("");
   const fut = m.upcoming.slice(0, 7).map((u, i) => {
@@ -329,7 +389,7 @@ function renderLoan() {
     const val = u.paused ? t("paused") : inr(u.due);
     return `<div class="cal-c ${cls}"><i ${langAttr(m.lang)}>${esc(ldate(u.date, { weekday: "short" }))}</i><b>${D(u.date).getDate()}</b><em ${langAttr(m.lang)}>${esc(val)}</em></div>`;
   }).join("");
-  const lg = ["ok", "pz", "od", "cu"].map(k => `<span class="l-${k}" ${langAttr(m.lang)}>${esc(t("l_" + k))}</span>`).join("");
+  const lg = ["ok", "pz", "od", "cu", "cs"].map(k => `<span class="l-${k}" ${langAttr(m.lang)}>${esc(t("l_" + k))}</span>`).join("");
   $("#loanOut").innerHTML = `
     <div class="h-card ln-sum"><h4>${tt("outstanding")}</h4><div class="h-big">${inr(Lo.outstanding)}</div>
       <div class="ln-bar"><i style="width:${(paid * 100).toFixed(1)}%"></i></div>
@@ -485,6 +545,7 @@ async function renderWeek() {
         <div class="po-arrow">→</div>
         <div class="po w"><span class="k">With Sambhal</span><span class="v">${inr(woMax.with.deducted)}</span>
           <span class="s">${pct(shareW)} of the day's sales</span><span class="s">${odW ? `${plural(odW)} overdue` : "Never overdue"}</span></div>
+        ${cushionBox(wk, woMax)}
       </div></div>` : "";
   el.innerHTML = `<div class="week">${payoff}
     <div class="week-kpis">
@@ -498,8 +559,30 @@ async function renderWeek() {
   </div>`;
 }
 
+function cushionBox(wk, day) {
+  if (!wk.cushion || !day.cushion) return "";
+  const rows = wk.rows.filter(r => r.cushion), used = rows.filter(r => r.cushion.from_cushion > 0);
+  if (!used.length) return "";
+  const before = rows[rows.indexOf(used[0]) - 1];
+  const ahead = before ? before.cushion.cushion : used[0].cushion.cushion + used[0].cushion.from_cushion;
+  const span = used.length > 1 ? `${used[0].dow}–${used[used.length - 1].dow}` : used[0].dow;
+  const share = day.sales ? day.cushion.deducted / day.sales : 0;
+  return `<div class="po-arrow">→</div>
+    <div class="po cu"><span class="k">With pay-ahead, on from the start</span><span class="v">${inr(day.cushion.deducted)}</span>
+      <span class="s">${pct(share)} of the day's sales${day.cushion.to_cushion ? ` (+ ${inr(day.cushion.to_cushion)} paid ahead)` : ""}</span>
+      <span class="s">${inr(ahead)} paid ahead covered ${span}. No pause, nothing overdue.</span></div>`;
+}
+
 // ---------------------------------------------------------------- proof
+function renderPromiseProof(results) {
+  const ok = Object.fromEntries((results || []).map(r => [r.id, r.ok]));
+  $("#promiseProof").innerHTML = `<p class="sec-t">Sambhal's promise to merchants, and what proves each one</p>` + S.promises.map(p => `
+    <div class="pp"><span class="ic">${p.icon}</span><div><b>${esc(p.text.en)}</b><span class="muted">Rule: ${esc(p.rule)}</span></div>
+      <div class="pp-ids">${p.checks.map(id => `<code class="${id in ok ? (ok[id] ? "ok" : "no") : ""}">${id}</code>`).join("")}${p.tests.length ? `<code title="${esc(p.tests.join(", "))}">+${p.tests.length} test${p.tests.length > 1 ? "s" : ""}</code>` : ""}</div></div>`).join("");
+}
+
 async function runEvals() {
+  renderPromiseProof();
   const btn = $("#btnEvals"); btn.disabled = true; btn.textContent = "Running…";
   $("#evalSummary").innerHTML = ""; $("#evalList").innerHTML = `<p class="muted">Building a fresh world for each scenario…</p>`;
   try {
@@ -515,6 +598,7 @@ async function runEvals() {
       rows[i].className = `ev ${x.ok ? "pass" : "fail"}`; rows[i].querySelector(".r").textContent = x.ok ? "✓" : "✕";
       if (i % 3 === 0) await new Promise(res => setTimeout(res, 18));
     }
+    renderPromiseProof(r.results);
     $("#evalSummary").innerHTML = `<span class="big ${r.passed === r.total ? "" : "bad"}">${r.passed}/${r.total}</span><span class="muted">passed in ${(r.ms / 1000).toFixed(1)} s · offline, deterministic, runs on every build (<code>pytest</code>)</span>`;
   } catch (e) { toast(`Checks failed to run: ${e.message}`); }
   btn.disabled = false; btn.textContent = "Run all checks";
@@ -524,16 +608,17 @@ async function runReplay() {
   const out = $("#replayOut"); out.innerHTML = `<p class="muted">Replaying…</p>`;
   try {
     const r = await api("/api/replay");
-    const W = r.with, O = r.without;
-    const row = (label, a, b, fmt = v => v) => `<span>${label}</span><span class="w">${fmt(a)}</span><span class="wo">${fmt(b)}</span>`;
+    const W = r.with, O = r.without, P = r.pay_ahead;
+    const row = (label, a, b, fmt = v => v, c = "") => `<span>${label}</span><span class="w">${fmt(a)}</span><span class="wo">${fmt(b)}</span><span class="pa">${c === "—" ? c : fmt(c)}</span>`;
     out.innerHTML = `
-      <div class="cmp"><span class="h">${r.flagged} of ${r.merchants_total} merchants flagged</span><span class="h" style="text-align:right">With</span><span class="h" style="text-align:right">Without</span>
-        ${row("Merchants who fell overdue", W.merchants_overdue, O.merchants_overdue)}
-        ${row("Merchant-days overdue", W.overdue_days, O.overdue_days)}
-        ${row("Merchants 3+ days overdue", W.merchants_dpd_3plus, O.merchants_dpd_3plus)}
-        ${row("Biggest single deduction (median)", W.median_peak_multiple, O.median_peak_multiple, v => `${v.toFixed(1)}×`)}
-        ${row("Guardrail violations found by audit", r.violations.length, "—")}
+      <div class="cmp"><span class="h">${r.flagged} of ${r.merchants_total} merchants flagged</span><span class="h" style="text-align:right">With</span><span class="h" style="text-align:right">Without</span><span class="h" style="text-align:right">Pay-ahead*</span>
+        ${row("Merchants who fell overdue", W.merchants_overdue, O.merchants_overdue, v => v, P.merchants_overdue)}
+        ${row("Merchant-days overdue", W.overdue_days, O.overdue_days, v => v, P.overdue_days)}
+        ${row("Merchants 3+ days overdue", W.merchants_dpd_3plus, O.merchants_dpd_3plus, v => v, P.merchants_dpd_3plus)}
+        ${row("Biggest single deduction (median)", W.median_peak_multiple, O.median_peak_multiple, v => `${v.toFixed(1)}×`, P.median_peak_multiple)}
+        ${row("Guardrail violations found by audit", r.violations.length, "—", v => v, "—")}
       </div>
+      <p class="note">* Pay-ahead only: the plain loan with the merchant's own pay-ahead switched on since the loan began, and no other help. It assumes every merchant opts in, so it is an upper bound to test in a pilot, not a forecast. Merchants pay the same total, just earlier, on good days.</p>
       <p class="note"><b>${r.relief_accepted}</b> accepted relief from the lender's menu. <b>${r.handed_to_person}</b> went to a person. ${r.messages_sent} messages sent, ${r.proactive_messages} of them unprompted, all re-checked by an independent audit.</p>
       <div><p class="sec-t">Still overdue with Sambhal: each one is with a person, by design</p>
       <ul style="margin:0;padding-left:18px;font-size:13px">${r.still_overdue_with.map(x => `<li>${esc(x.merchant)}: ${esc((x.reason || "").replace(/_/g, " ") || STATE_LABEL[x.state])} (${esc(STATE_LABEL[x.state])})</li>`).join("")}</ul></div>
@@ -565,7 +650,7 @@ function goStep(n) {
 const SPOT = {
   home: ["#phone"], settle: ["#scrHome .h-last"], guard: ["#caseDetail .checks"], voice: ["#chat .vn", true],
   reading: ["#caseDetail .reading"], calendar: ["#scrLoan .cal", true], week: ["#tab-week .chartwrap"],
-  payoff: ["#tab-week .payoff"], audit: ["#tab-audit .tablewrap"],
+  payoff: ["#tab-week .payoff"], audit: ["#tab-audit .tablewrap"], cushion: ["#tab-week .po.cu"],
 };
 async function applyStep() {
   const st = S.steps[S.step];
@@ -603,9 +688,21 @@ function acceptOpt(opt) {
     render(); autoSpeak();
   });
 }
+function setConsent(on) {
+  return act(async () => {
+    S = await post("/api/consent", { merchant_id: focus, on });
+    screen = "chat"; render(); autoSpeak();
+  });
+}
+function setCushion(on) {
+  return act(async () => {
+    const r = await post("/api/cushion", { merchant_id: focus, on });
+    S = r; if (!r.result.ok) toast(`Pay-ahead: ${r.result.why}`);
+    render(); autoSpeak();
+  });
+}
 function autoSpeak() {
-  const c = S.merchant.case; if (!c) return;
-  const fresh = c.messages.filter(m => m.dir === "out" && m.status === "sent" && m.id > lastSpoken);
+  const fresh = S.merchant.thread.filter(m => m.dir === "out" && m.status === "sent" && m.id > lastSpoken);
   lastSpoken = maxOutId();
   if (fresh.length) playMsg(fresh[fresh.length - 1].id);
 }
@@ -613,14 +710,16 @@ function autoSpeak() {
 // ---------------------------------------------------------------- voice out
 let audioEl = null;
 async function playMsg(id) {
-  const c = S.merchant.case; const msg = c && c.messages.find(m => m.id === id); if (!msg) return;
-  const btn = $(`.vn[data-id="${id}"]`);
+  const msg = S.merchant.thread.find(m => m.id === id); if (!msg) return;
+  return playText(`${msg.header}. ${msg.text}`, msg.lang, $(`.vn[data-id="${id}"]`));
+}
+async function playText(text, lang, btn) {
+  const msg = { lang };
   if (audioEl) { audioEl.pause(); audioEl = null; }
   speechSynthesis.cancel();
-  const text = `${msg.header}. ${msg.text}`;
   btn && btn.classList.add("on");
   try {
-    const r = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, lang: msg.lang }) });
+    const r = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, lang }) });
     if (!r.ok) throw new Error("tts");
     const blob = await r.blob();
     audioEl = new Audio(URL.createObjectURL(blob));

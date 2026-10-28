@@ -7,7 +7,7 @@ outbound message passing the guardrails first.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, time, timedelta
 
 from . import config, guardrails, llm, nlu, policy, replies, signals
@@ -215,8 +215,8 @@ class World:
             if case and case.is_open:
                 self.watch_case(case, d, sig, row)
             elif sig:
-                recent = [c for c in self.closed_cases if c.merchant_id == mid and c.closed_at
-                          and self.now - c.closed_at < timedelta(days=7)]
+                recent = [c for c in self.closed_cases if c.merchant_id == mid and c.closed_at and c.trigger
+                          and self.now - c.closed_at < timedelta(days=7)]     # answered questions don't count
                 if not recent:
                     self.open_case(mid, sig)
 
@@ -380,7 +380,15 @@ class World:
                         f"[read as {intent.replace('_', ' ')} by {reading['source']}]", "in")
         self.audit(mid, "Understanding", intent, f"{reading['source']}: {msg.text_en}")
         self.respond(case, reading, lang)
+        self.finish_service(case)
         return {"case": case.id, "intent": intent}
+
+    def finish_service(self, case: Case):
+        """A conversation the merchant started that needed no help (a question, a setting) is closed once answered,
+        so it can never hide a later early-warning flag. Offers and hand-offs stay open."""
+        if case.is_open and case.trigger is None and case.state == "waiting" and not case.human:
+            case.state, case.outcome, case.closed_at = "closed", "Answered", self.now
+            self.close(case)
 
     def offer_parts(self, case: Case, reason: str, days: int | None) -> tuple[list, list]:
         mid = case.merchant_id
@@ -587,7 +595,15 @@ class World:
                                         "installment": money(loan.installment), "per_day": money(t["catchup_per_day"])})]
         else:
             parts = [("welcome_generic", {"first": m.first_local if m.lang != "en" else m.first, "first_en": m.first, "deducted": money(last["deducted"])})]
-        self.send(case, parts, kind="proactive", msg_kind="welcome_back")
+        options = []
+        cs = None if loan.cushion.get("on") else policy.pay_ahead(loan, self.sales[mid], self.now.date())
+        if cs:      # prepare for the next slow week
+            f = {"threshold": money(cs["threshold"]), "amount": money(cs["amount"])}
+            parts.append(("payahead_offer", f))
+            options = [{"id": "PAYAHEAD", "kind": "payahead", "label": replies.PAYAHEAD_LABEL[m.lang],
+                        "label_en": replies.PAYAHEAD_LABEL["en"], "text": replies.line("payahead_offer", m.lang, **f),
+                        "text_en": replies.line("payahead_offer", "en", **f), "preview": None}]
+        self.send(case, parts, kind="proactive", msg_kind="welcome_back", options=options)
         case.state, case.outcome, case.closed_at = "recovered", "Recovered without a missed installment", self.now
         self.note(case, "Case closed: recovered. Catch-up continues automatically.", "good")
         self.audit(mid, "Outcome", "recovered", f"Back to normal sales; {st_missed(self.states[mid])}")
@@ -611,9 +627,74 @@ class World:
         """Same days, same sales, no Sambhal (no adjustments from `start`)."""
         loan = self.loans[mid]
         pre = {d: a for d, a in loan.adjustments.items() if d < start}
-        st, _ = replay(loan, self.sales[mid], loan.disbursed_on + timedelta(days=1), start - timedelta(days=1), pre)
-        _, rows = replay(loan, self.sales[mid], start, end, pre, st)
+        st, _ = replay(loan, self.sales[mid], loan.disbursed_on + timedelta(days=1), start - timedelta(days=1), pre,
+                       cushion=False)
+        _, rows = replay(loan, self.sales[mid], start, end, pre, st, cushion=False)
         return rows
+
+    def cushion_whatif(self, mid: str, end: date) -> dict | None:
+        """The same loan and sales with pay-ahead on from the first day and no relief from Sambhal."""
+        loan = self.loans[mid]
+        cs = loan.cushion if loan.cushion.get("on") else policy.pay_ahead(loan, self.sales[mid], self.now.date())
+        if not cs:
+            return None
+        ghost = replace(loan, adjustments={}, cushion={"on": True, "threshold": cs["threshold"], "amount": cs["amount"]})
+        _, rows = replay(ghost, self.sales[mid], loan.disbursed_on + timedelta(days=1), end, {})
+        return {"threshold": cs["threshold"], "amount": cs["amount"], "rows": {r["date"]: r for r in rows}}
+
+    def set_consent(self, mid: str, on: bool) -> dict:
+        """The merchant turns Sambhal's messages on or off (consent can be withdrawn at any time)."""
+        m = self.merchants[mid]
+        if m.consent == on:
+            return {"ok": True, "consent": on}
+        m.consent = on
+        case = self.case_for(mid) or self.open_case(mid, None, inbound=True)
+        if not on:
+            self.cancel_held(case)
+        self.msg_seq += 1
+        label = {"kn": "ಸಂಭಲ್", "hi": "संभल", "en": "Sambhal"}[m.lang]
+        tap = Message(id=self.msg_seq, at=self.now, dir="in", lang=m.lang, text=f"{'✓' if on else '✕'} {label}",
+                      text_en=f"Sambhal messages turned {'on' if on else 'off'}", kind="consent", status="received",
+                      via="tap", author="merchant", sent_at=self.now)
+        case.messages.append(tap)
+        case.last_inbound_at = self.now
+        self.note(case, f"Merchant {'gave' if on else 'withdrew'} consent for Sambhal messages.", "good" if on else "block")
+        self.audit(mid, "Consent", "given" if on else "withdrawn",
+                   "Merchant switched Sambhal on in the app" if on else
+                   "Merchant switched Sambhal off: no proactive messages; a person may call instead")
+        self.send(case, [("consent_on" if on else "consent_off", {})], kind="reply", msg_kind="consent")
+        self.finish_service(case)
+        return {"ok": True, "consent": on}
+
+    def set_cushion(self, mid: str, on: bool) -> dict:
+        """The merchant turns pay-ahead on or off from their app."""
+        m, loan, st = self.merchants[mid], self.loans[mid], self.states[mid]
+        if on:
+            cs = policy.pay_ahead(loan, self.sales[mid], self.now.date())
+            if not cs:
+                return {"ok": False, "why": "pay-ahead is not offered by this lender"}
+            loan.cushion = {"on": True, "threshold": cs["threshold"], "amount": cs["amount"],
+                            "since": self.now.date().isoformat()}
+        else:
+            loan.cushion = {**loan.cushion, "on": False}
+        case = self.case_for(mid) or self.open_case(mid, None, inbound=True)
+        self.msg_seq += 1
+        label = {"kn": "ಮುಂಗಡ ಕಂತು", "hi": "अग्रिम किस्त", "en": "Pay-ahead"}[m.lang]
+        tap = Message(id=self.msg_seq, at=self.now, dir="in", lang=m.lang, text=f"{'✓' if on else '✕'} {label}",
+                      text_en=f"Pay-ahead turned {'on' if on else 'off'}", kind="cushion", status="received",
+                      via="tap", author="merchant", sent_at=self.now)
+        case.messages.append(tap)
+        case.last_inbound_at = self.now
+        f = {"threshold": money(loan.cushion.get("threshold", 0)), "amount": money(loan.cushion.get("amount", 0)),
+             "balance": money(st.cushion)}
+        self.note(case, f"Merchant turned pay-ahead {'on' if on else 'off'}"
+                        + (f": ₹{f['amount']} on days with sales of ₹{f['threshold']} or more." if on else "."), "good")
+        self.audit(mid, "Pay-ahead", "on" if on else "off",
+                   f"₹{f['amount']} paid ahead on days with sales ≥ ₹{f['threshold']}" if on else
+                   f"Turned off; ₹{f['balance']} already paid ahead still counts towards the loan")
+        self.send(case, [("payahead_on" if on else "payahead_off", f)], kind="reply", msg_kind="payahead")
+        self.finish_service(case)
+        return {"ok": True, "cushion": loan.cushion}
 
     def week(self, mid: str, start: date | None = None, days: int = 8) -> dict:
         start = start or date(2026, 10, 21)
@@ -630,7 +711,14 @@ class World:
                 "with": None if not a else {k2: a[k2] for k2 in ("deducted", "arrears", "dpd", "paused", "catchup", "installment")},
                 "without": None if not a else {k2: c[k2] for k2 in ("deducted", "arrears", "dpd")},
             })
-        return {"merchant_id": mid, "rows": out}
+        wi = self.cushion_whatif(mid, end) if self.loans[mid].cushion.get("on") else None
+        if wi:
+            for r in out:
+                c = wi["rows"].get(date.fromisoformat(r["date"]))
+                r["cushion"] = None if not r["settled"] or not c else {
+                    k2: c[k2] for k2 in ("deducted", "arrears", "dpd", "from_cushion", "to_cushion", "cushion")}
+        return {"merchant_id": mid, "rows": out,
+                "cushion": {"threshold": wi["threshold"], "amount": wi["amount"]} if wi else None}
 
     def case_view(self, c: Case) -> dict:
         m = self.merchants[c.merchant_id]
@@ -663,9 +751,18 @@ class World:
                      "missed_days": st.missed_days, "age_days": (self.now.date() - loan.disbursed_on).days},
             "recent": [{"date": r["date"].isoformat(), "dow": r["date"].strftime("%a"), "sales": r["sales"],
                         "baseline": round(same_weekday_baseline(self.sales[mid], r["date"])),
-                        "deducted": r["deducted"], "arrears": r["arrears"], "paused": r["paused"]} for r in recent],
+                        "deducted": r["deducted"], "arrears": r["arrears"], "paused": r["paused"],
+                        "from_cushion": r.get("from_cushion", 0), "to_cushion": r.get("to_cushion", 0)} for r in recent],
             "case": self.case_view(case) if case else None,
+            "thread": [x.view() | {"simulated": x.simulated, "case_id": c.id, "case_state": c.state,
+                                   "case_accepted": c.accepted}
+                       for x, c in sorted(((x, c) for c in self.cases.values() if c.merchant_id == mid
+                                           for x in c.messages), key=lambda p: (p[0].sent_at or p[0].at, p[0].id))],
             "upcoming": self.upcoming(mid),
+            "cushion": {**loan.cushion, "on": bool(loan.cushion.get("on")), "balance": st.cushion,
+                        "added": st.cushion_added, "used": st.cushion_used,
+                        "covers_days": st.cushion // loan.installment,
+                        "suggest": None if loan.cushion.get("on") else policy.pay_ahead(loan, self.sales[mid], self.now.date())},
             "ends_on": (self.now.date() + timedelta(days=-(-max(loan.total - st.collected, 0) // loan.installment))).isoformat(),
         }
 

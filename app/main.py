@@ -61,7 +61,7 @@ def snapshot(focus: Optional[str] = None) -> dict:
         "focus": focus, "merchant": W.merchant_view(focus), "cases": [case_summary(c) for c in cases],
         "counts": {"merchants": len(W.merchants), "cases": len(cases), "by_state": states,
                    "with_person": sum(1 for c in cases if c.human), "held": len(W.outbox)},
-        "audit_count": len(W.audit_log), "quick": replies.QUICK_REPLIES,
+        "audit_count": len(W.audit_log), "quick": replies.QUICK_REPLIES, "promises": replies.PROMISES,
     }
 
 
@@ -141,6 +141,34 @@ class AcceptIn(BaseModel):
 def accept(body: AcceptIn):
     with LOCK:
         res = W.accept(body.merchant_id, body.option_id)
+        return {"result": res, **snapshot(body.merchant_id)}
+
+
+class ConsentIn(BaseModel):
+    merchant_id: str = "M01"
+    on: bool
+
+
+@app.post("/api/consent")
+def consent(body: ConsentIn):
+    with LOCK:
+        if body.merchant_id not in W.merchants:
+            raise HTTPException(404, "Unknown merchant")
+        res = W.set_consent(body.merchant_id, body.on)
+        return {"result": res, **snapshot(body.merchant_id)}
+
+
+class CushionIn(BaseModel):
+    merchant_id: str = "M01"
+    on: bool
+
+
+@app.post("/api/cushion")
+def cushion(body: CushionIn):
+    with LOCK:
+        if body.merchant_id not in W.merchants:
+            raise HTTPException(404, "Unknown merchant")
+        res = W.set_cushion(body.merchant_id, body.on)
         return {"result": res, **snapshot(body.merchant_id)}
 
 

@@ -5,10 +5,19 @@
     {
       "id": "PAUSE_3",
       "kind": "pause",
-      "label": {"en": "3-day pause", "hi": "3 दिन की छूट", "kn": "3 ದಿನಗಳ ವಿರಾಮ"},
+      "label": {
+        "en": "3-day pause",
+        "hi": "3 दिन की छूट",
+        "kn": "3 ದಿನಗಳ ವಿರಾಮ"
+      },
       "max_days": 3,
       "repay_over_days": 14,
-      "reasons": ["family_event", "temporary_closure", "illness", "business_slow"],
+      "reasons": [
+        "family_event",
+        "temporary_closure",
+        "illness",
+        "business_slow"
+      ],
       "requires_human": false,
       "eligibility": {
         "min_loan_age_days": 30,
@@ -20,10 +29,16 @@
     {
       "id": "HALF_14",
       "kind": "reduce",
-      "label": {"en": "Half installment for 14 days", "hi": "14 दिन आधी किस्त", "kn": "14 ದಿನ ಅರ್ಧ ಕಂತು"},
+      "label": {
+        "en": "Half installment for 14 days",
+        "hi": "14 दिन आधी किस्त",
+        "kn": "14 ದಿನ ಅರ್ಧ ಕಂತು"
+      },
       "days": 14,
       "fraction": 0.5,
-      "reasons": ["business_slow"],
+      "reasons": [
+        "business_slow"
+      ],
       "requires_human": false,
       "eligibility": {
         "min_loan_age_days": 60,
@@ -35,10 +50,20 @@
     {
       "id": "PAUSE_7_REVIEW",
       "kind": "pause",
-      "label": {"en": "Up to 7-day pause (lender staff approve)", "hi": "7 दिन तक की छूट (लेंडर स्टाफ़ मंज़ूर करेगा)", "kn": "7 ದಿನಗಳವರೆಗೆ ವಿರಾಮ (ಸಾಲದಾತರ ಸಿಬ್ಬಂದಿ ಒಪ್ಪಿಗೆ)"},
+      "label": {
+        "en": "Up to 7-day pause (lender staff approve)",
+        "hi": "7 दिन तक की छूट (लेंडर स्टाफ़ मंज़ूर करेगा)",
+        "kn": "7 ದಿನಗಳವರೆಗೆ ವಿರಾಮ (ಸಾಲದಾತರ ಸಿಬ್ಬಂದಿ ಒಪ್ಪಿಗೆ)"
+      },
       "max_days": 7,
       "repay_over_days": 30,
-      "reasons": ["medical_emergency", "bereavement", "illness", "family_event", "temporary_closure"],
+      "reasons": [
+        "medical_emergency",
+        "bereavement",
+        "illness",
+        "family_event",
+        "temporary_closure"
+      ],
       "requires_human": true,
       "eligibility": {
         "min_loan_age_days": 30,
@@ -48,6 +73,18 @@
       }
     }
   ],
-  "never_offered_by_agent": ["waiver", "interest_reduction", "settlement", "tenure_restructure"],
-  "max_options_per_message": 2
+  "never_offered_by_agent": [
+    "waiver",
+    "interest_reduction",
+    "settlement",
+    "tenure_restructure"
+  ],
+  "max_options_per_message": 2,
+  "pay_ahead": {
+    "enabled": true,
+    "note": "Merchant's choice. On a day when sales reach their usual day's level and nothing is owed, a small amount is paid towards future installments; on a short day it pays first. Installments paid early to the lender, not a deposit. No charge for paying early.",
+    "share_of_installment": 0.12,
+    "round_to": 50,
+    "lookback_days": 56
+  }
 }

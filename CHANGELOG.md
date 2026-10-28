@@ -56,6 +56,12 @@
   all 28 regenerated and pass listening back. The checker now reads Kannada number words, not just digits (six
   first-pass "wrong amount" flags were the checker's, not the voice's); one genuinely misspoken amount (₹182
   heard as 152) was remade. 146 tests.
+- 29 Oct, second Wispr listening test on the regenerated Kannada: every amount heard right (₹850, ₹2,550, ₹182,
+  ₹1,032, ₹6,000, ₹100) and ಕಂತಿಗೆ heard correctly. New finds, fixed in what the voice is given: "ಅಕ್ಟೋಬರ್ 23–25"
+  was heard as "23 and 25" (the dash is silent, so Saturday sounds deducted) -> spoken "ಇಪ್ಪತ್ತಮೂರರಿಂದ
+  ಇಪ್ಪತ್ತೈದರವರೆಗೆ" (Hindi "से", English "to"); case endings join the number ("ಎಂಟರಿಂದ", "ಇಪ್ಪತ್ತಾರರವರೆಗೆ");
+  "+" was read as English "plus" -> ಮತ್ತು / और; "ಸಂಭಾಲ್ · ಈ" ran together into "ಸಂಭಾಷಣಾ" -> a full stop after the
+  name. 156 tests. 14 affected story lines to be remade (needs credits).
 
 ## On the day (31 Oct 2026)
 - 

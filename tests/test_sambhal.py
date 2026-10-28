@@ -534,3 +534,24 @@ def test_listening_back_reads_kannada_number_words():
     assert voice_qa.kn_numbers_in_words("ನಿಮ್ಮ ಎಂಟು ನೂರ ಐವತ್ತು ರೂಪಾಯಿ") == {"850"}     # spaced, as speech-to-text writes it
     assert voice_qa.kn_numbers_in_words("2 ಸಾವಿರದ 550 ರೂಪಾಯಿ") == {"2550"}
     assert not voice_qa.check("ಬಾಕಿ ₹6,000.", "kn", "ಬಾಕಿ ಆರು ಸಾವಿರ ರೂಪಾಯಿ.")              # words count as heard
+
+
+
+# ---------------------------------------------------------------- second Wispr listening test
+@pytest.mark.parametrize("text,lang,spoken", [
+    # "23–25" was heard as "23 and 25": the range must be spoken
+    ("ಅಕ್ಟೋಬರ್ 23–25 ರಂದು ಕಡಿತ ಇಲ್ಲ", "kn", "ಅಕ್ಟೋಬರ್ ಇಪ್ಪತ್ತಮೂರರಿಂದ ಇಪ್ಪತ್ತೈದರವರೆಗೆ ಕಡಿತ ಇಲ್ಲ"),
+    ("ಅಕ್ಟೋಬರ್ 30 – ನವೆಂಬರ್ 1 ರಂದು", "kn", "ಅಕ್ಟೋಬರ್ ಮೂವತ್ತರಿಂದ ನವೆಂಬರ್ ಒಂದರವರೆಗೆ"),
+    ("23–25 अक्टूबर को", "hi", "23 से 25 अक्टूबर को"),
+    ("no deduction on 23–25 Oct", "en", "no deduction on 23 to 25 Oct"),
+    # endings join the number, as spoken
+    ("ಬೆಳಿಗ್ಗೆ 8 ರಿಂದ ಸಂಜೆ 7 ರ ನಡುವೆ", "kn", "ಬೆಳಿಗ್ಗೆ ಎಂಟರಿಂದ ಸಂಜೆ ಏಳರ ನಡುವೆ"),
+    ("ಸೋಮವಾರ ಅಕ್ಟೋಬರ್ 26 ವರೆಗೆ", "kn", "ಸೋಮವಾರ ಅಕ್ಟೋಬರ್ ಇಪ್ಪತ್ತಾರರವರೆಗೆ"),
+    ("ಕಳೆದ 2 ದಿನಗಳಿಂದ", "kn", "ಕಳೆದ ಎರಡು ದಿನಗಳಿಂದ"),                     # a separate word: no joining
+    # "+" was read as the English "plus"; the name ran into the next word
+    ("₹850 + ₹182", "kn", "ಎಂಟುನೂರ ಐವತ್ತು ರೂಪಾಯಿ ಮತ್ತು ನೂರ ಎಂಬತ್ತೆರಡು ರೂಪಾಯಿ"),
+    ("₹850 + ₹182", "hi", "₹850 और ₹182"),
+    ("Demo NBFC ಪರವಾಗಿ ಸಂಭಾಲ್ · ಈ ಸಂದೇಶವನ್ನು", "kn", "Demo NBFC ಪರವಾಗಿ ಸಂಭಾಲ್. ಈ ಸಂದೇಶವನ್ನು"),
+])
+def test_ranges_endings_and_pauses_are_spoken_clearly(text, lang, spoken):
+    assert voice.speech_text(text, lang) == spoken

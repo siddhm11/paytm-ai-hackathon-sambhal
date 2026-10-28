@@ -74,12 +74,38 @@ def kn_number(n: int) -> str:
     return " ".join(parts)
 
 
+# Case endings written apart from a digit ("8 ರಿಂದ", "26 ವರೆಗೆ") and the joined form they take when spoken.
+KN_SUFFIX = {"ರಿಂದ": "ರಿಂದ", "ರವರೆಗೆ": "ರವರೆಗೆ", "ವರೆಗೆ": "ರವರೆಗೆ", "ರಂದು": "ರಂದು", "ರ": "ರ"}
+
+
+def _kn_amount(m) -> str:
+    return f"{kn_number(int(m.group(1).replace(',', '')))} ರೂಪಾಯಿ"
+
+
+def _kn_with_suffix(m) -> str:
+    """'25 ರವರೆಗೆ' -> 'ಇಪ್ಪತ್ತೈದರವರೆಗೆ', '7 ರ' -> 'ಏಳರ': the ending joins the number, as it is spoken."""
+    word, suffix = kn_number(int(m.group(1).replace(",", ""))), m.group(2)
+    return word[:-1] + KN_SUFFIX[suffix] if word.endswith("ು") else f"{word} {suffix}"
+
+
 def speech_text(text: str, lang: str) -> str:
-    """The words the voice is given. The screen keeps showing the original text."""
+    """The words the voice is given. The screen keeps showing the original text.
+
+    Heard in a Wispr Flow listening test: "ಅಕ್ಟೋಬರ್ 23–25" came across as "23 and 25" (the dash is silent, so
+    Saturday sounds deducted); "ಸಂಭಾಲ್ · ಈ" ran together into "ಸಂಭಾಷಣಾ"; "+" was read as the English "plus".
+    """
+    text = text.replace(" · ", ". ")                    # a real pause after the name
     if lang == "kn":
-        text = re.sub(r"₹\s?(\d[\d,]*)", lambda m: f"{kn_number(int(m.group(1).replace(',', '')))} ರೂಪಾಯಿ", text)
+        text = re.sub(r"\s?–\s?(.{1,25}?)\sರಂದು", r" ರಿಂದ \1 ರವರೆಗೆ", text)    # 23–25 ರಂದು -> 23 ರಿಂದ 25 ರವರೆಗೆ
+        text = re.sub(r"\s?–\s?", " ರಿಂದ ", text).replace(" + ", " ಮತ್ತು ")
+        text = re.sub(r"₹\s?(\d[\d,]*)", _kn_amount, text)
+        text = re.sub(r"(\d[\d,]*) (" + "|".join(sorted(KN_SUFFIX, key=len, reverse=True)) + r")(?![\u0C80-\u0CFF])",
+                      _kn_with_suffix, text)
         text = re.sub(r"\d[\d,]*", lambda m: kn_number(int(m.group(0).replace(",", ""))), text)
-    elif lang == "en":
+    elif lang == "hi":
+        text = re.sub(r"\s?–\s?", " से ", text).replace(" + ", " और ")             # 23–25 अक्टूबर -> 23 से 25 अक्टूबर
+    else:
+        text = re.sub(r"\s?–\s?", " to ", text)
         text = text.replace("Sambhal", "Sambhaal")      # said "Sambal" ("Symbol" to Wispr); the name means संभाल
     return text
 

@@ -524,3 +524,13 @@ def test_listening_back_catches_wrong_amounts_and_cut_off_lines():
 def test_hindi_questions_say_kya_so_they_sound_like_questions():
     assert "क्या सब ठीक है?" in replies.line("checkin", "hi", first="इमरान", first_en="Imran", installment="940")
     assert "क्या सब ठीक है?" in replies.line("checkin_red", "hi", first="इमरान", first_en="Imran", arrears="160")
+
+
+def test_listening_back_reads_kannada_number_words():
+    import random
+    from app import voice_qa
+    for n in list(range(0, 1200)) + random.Random(1).sample(range(1200, 9_999_999), 800):
+        assert voice_qa.kn_numbers_in_words(voice.kn_number(n) + " ರೂಪಾಯಿ") == {str(n)}
+    assert voice_qa.kn_numbers_in_words("ನಿಮ್ಮ ಎಂಟು ನೂರ ಐವತ್ತು ರೂಪಾಯಿ") == {"850"}     # spaced, as speech-to-text writes it
+    assert voice_qa.kn_numbers_in_words("2 ಸಾವಿರದ 550 ರೂಪಾಯಿ") == {"2550"}
+    assert not voice_qa.check("ಬಾಕಿ ₹6,000.", "kn", "ಬಾಕಿ ಆರು ಸಾವಿರ ರೂಪಾಯಿ.")              # words count as heard

@@ -51,6 +51,11 @@
   `warm_voice_cache.py` listens back to every line and remakes faulty ones (`--remake kn,en`); on a 402 (no
   credits) the app falls back to saved audio, browser speech and rules instead of failing. Audio not yet
   regenerated: Sarvam credits ran out during testing. 145 tests.
+- 29 Oct: the name is spelled संभाल / ಸಂಭಾಲ್ in Hindi and Kannada, as in the deck. `warm_voice_cache.py --story`
+  makes only the 28 lines the presenter can play (Ravi, Shobha, Bellandur, Ravi's replies, the Kannada promise);
+  all 28 regenerated and pass listening back. The checker now reads Kannada number words, not just digits (six
+  first-pass "wrong amount" flags were the checker's, not the voice's); one genuinely misspoken amount (₹182
+  heard as 152) was remade. 146 tests.
 
 ## On the day (31 Oct 2026)
 - 

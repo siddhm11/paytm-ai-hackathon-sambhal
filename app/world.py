@@ -918,7 +918,7 @@ class World:
         if not on:
             self.cancel_held(case)
         self.msg_seq += 1
-        label = {"kn": "ಸಂಭಲ್", "hi": "संभल", "en": "Sambhal"}[m.lang]
+        label = {"kn": "ಸಂಭಾಲ್", "hi": "संभाल", "en": "Sambhal"}[m.lang]
         tap = Message(id=self.msg_seq, at=self.now, dir="in", lang=m.lang, text=f"{'✓' if on else '✕'} {label}",
                       text_en=f"Sambhal messages turned {'on' if on else 'off'}", kind="consent", status="received",
                       via="tap", author="merchant", sent_at=self.now)

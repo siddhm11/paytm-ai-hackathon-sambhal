@@ -242,7 +242,9 @@ python scripts/run_evals.py     # human-readable report
 * **Port busy:** `uvicorn app.main:app --port 8010`.
 * **Sarvam out of credits** (`402 No credits available`): the app switches itself to saved audio, the browser's
   speech recognition and the rules reader, and the header says so. Top up on the Sarvam dashboard, then run
-  `python scripts/warm_voice_cache.py --remake kn,en` (about ₹100–165 for all 98 lines, listening back included).
+  `python scripts/warm_voice_cache.py --story` (only the 28 lines the presenter can play, about ₹30) or
+  `--remake kn,en` for all 98 lines (about ₹100–165), listening back included. Background shops without saved
+  audio use the browser's voice.
 
 ### How Sambhal's voice is checked
 

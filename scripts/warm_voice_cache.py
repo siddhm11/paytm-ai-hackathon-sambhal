@@ -25,30 +25,38 @@ TRY_LINES = ["Business is slow because of the rain", "Can you waive the interest
 AFTER_OFFER = ["Can I get more days?"]   # asked while Ravi's 3-day pause is on offer
 
 
-def outbound(w: World):
+STORY = {"M01", "M42", "M43"}      # the merchants the presenter steps show: Ravi, Shobha, Bellandur
+
+
+def outbound(w: World, only: set | None = None):
     for c in w.cases.values():
+        if only and c.merchant_id not in only:
+            continue
         for m in c.messages:
             if m.dir == "out":
                 yield f"{replies.header(m.lang)}. {m.text}", m.lang
 
 
-def collect():
+def collect(story: bool = False):
+    """Every line the demo can speak; with story=True only what the presenter's steps and Ravi's replies can play
+    (the background shops then fall back to the browser's voice), to save credits."""
     lines = {}
+    only = STORY if story else None
     w = World(use_llm=False)
     presenter.go_to(w, len(presenter.STEPS) - 1)        # Ravi's week, pay-ahead, Shobha, Bellandur: every shop
-    lines.update({t: l for t, l in outbound(w)})
+    lines.update({t: l for t, l in outbound(w, only)})
     for key, by_lang in replies.QUICK_REPLIES.items():  # one-tap replies and home buttons, Ravi in Kannada
         w = World(use_llm=False)
         presenter.go_to(w, 3)
         w.inbound("M01", by_lang["kn"])
-        lines.update({t: l for t, l in outbound(w)})
+        lines.update({t: l for t, l in outbound(w, only)})
     w = World(use_llm=False)                            # the switches: consent and pay-ahead, off and on
     presenter.go_to(w, 9)
     for on in (False, True):
         w.set_consent("M01", on)
     w.set_cushion("M01", False)
-    lines.update({t: l for t, l in outbound(w)})
-    for lang in ("kn", "hi", "en"):                     # Sambhal's promise, read aloud
+    lines.update({t: l for t, l in outbound(w, only)})
+    for lang in ("kn",) if story else ("kn", "hi", "en"):     # Sambhal's promise, read aloud
         lines[" ".join(p["text"][lang] for p in replies.PROMISES)] = lang
     for text in TRY_LINES:                    # what the quick-reply chips can trigger on stage
         w = World(use_llm=False)
@@ -57,18 +65,19 @@ def collect():
         c = w.case_for("M01")
         if c.state == "offered":
             w.accept("M01", c.offered[0])
-        lines.update({t: l for t, l in outbound(w)})
+        lines.update({t: l for t, l in outbound(w, only)})
     for text in AFTER_OFFER:
         w = World(use_llm=False)
         presenter.go_to(w, 4)
         w.inbound("M01", text)
-        lines.update({t: l for t, l in outbound(w)})
+        lines.update({t: l for t, l in outbound(w, only)})
     return lines
 
 
 def main():
     ap = argparse.ArgumentParser(description="Save every demo line as Sarvam audio, then listen back to each one.")
     ap.add_argument("--no-check", action="store_true", help="only make missing lines; don't listen back")
+    ap.add_argument("--story", action="store_true", help="only the lines the presenter can play (saves credits)")
     ap.add_argument("--tries", type=int, default=3, help="remakes allowed for a line that sounds wrong")
     ap.add_argument("--remake", default="", help="languages to make again from scratch, e.g. kn,en (after a change "
                                                   "to how they are spoken)")
@@ -76,7 +85,7 @@ def main():
     if not config.SARVAM_API_KEY:
         sys.exit("Set SARVAM_API_KEY in .env first.")
     config.RUNTIME["offline"] = False
-    todo = collect()
+    todo = collect(args.story)
     remake = {x.strip() for x in args.remake.split(",") if x.strip()}
     print(f"{len(todo)} lines" + (f"; making {', '.join(sorted(remake))} again from scratch" if remake else ""))
     made = remade = 0

@@ -15,7 +15,7 @@ import httpx
 
 from . import config
 from .guardrails import _DIGITS
-from .voice import LANG_CODES
+from .voice import KN_HUNDREDS, LANG_CODES, _kn_99
 
 WORD = re.compile(r"[^\W\d_]+", re.UNICODE)
 ZW = dict.fromkeys(map(ord, "‌‍"))       # zero-width joiners used in Kannada
@@ -65,14 +65,45 @@ def amounts(text: str) -> list[str]:
     return [a.replace(",", "") for a in re.findall(r"₹\s?([\d,]+)", text.translate(_DIGITS))]
 
 
-def heard_numbers(transcript: str) -> set[str]:
-    return {n.replace(",", "") for n in re.findall(r"\d[\d,]*", transcript.translate(_DIGITS))}
+# Speech-to-text may write a spoken Kannada amount as words ("ಆರು ಸಾವಿರ ರೂಪಾಯಿ") or digits: read both.
+KN_SMALL = {_kn_99(n): n for n in range(100)}
+KN_HUND = {**{w: h * 100 for h, w in KN_HUNDREDS.items() if h > 1},       # ಎಂಟುನೂರು / ಎಂಟುನೂರ = 800; a lone
+           **{w[:-1]: h * 100 for h, w in KN_HUNDREDS.items() if h > 1}}    # ನೂರ(ು) multiplies what came before
+KN_MULT = {"ಸಾವಿರ": 1000, "ಸಾವಿರದ": 1000, "ಲಕ್ಷ": 100000, "ಲಕ್ಷದ": 100000}
+
+
+def kn_numbers_in_words(text: str) -> set[str]:
+    """'ಎರಡು ಸಾವಿರದ ಐನೂರ ಐವತ್ತು ರೂಪಾಯಿ' -> {'2550'}; digits mixed in ('2 ಸಾವಿರದ 550') are read too."""
+    found, total, cur, any_num = set(), 0, 0, False
+    for tok in re.findall(r"[^\s,.!?।:;()\-–]+", text.translate(_DIGITS).translate(ZW)):
+        if tok.isdigit():
+            cur += int(tok); any_num = True
+        elif tok in KN_SMALL:
+            cur += KN_SMALL[tok]; any_num = True
+        elif tok in KN_HUND:
+            cur += KN_HUND[tok]; any_num = True
+        elif tok in ("ನೂರು", "ನೂರ"):
+            cur = (cur or 1) * 100; any_num = True
+        elif tok in KN_MULT:
+            total += (cur or 1) * KN_MULT[tok]; cur = 0; any_num = True
+        else:
+            if any_num:
+                found.add(str(total + cur))
+            total, cur, any_num = 0, 0, False
+    if any_num:
+        found.add(str(total + cur))
+    return found
+
+
+def heard_numbers(transcript: str, lang: str = "") -> set[str]:
+    nums = {n.replace(",", "") for n in re.findall(r"\d[\d,]*", transcript.translate(_DIGITS))}
+    return nums | kn_numbers_in_words(transcript) if lang == "kn" else nums
 
 
 def check(text: str, lang: str, transcript: str) -> list[str]:
     """Problems with how a line was spoken (empty = it sounds right)."""
     problems = []
-    heard = heard_numbers(transcript)
+    heard = heard_numbers(transcript, lang)
     if lang != "hi":            # Hindi recognition often writes amounts as words ('एक सौ साठ'); checked by ear
         missing = [a for a in amounts(text) if a not in heard]
         if missing:

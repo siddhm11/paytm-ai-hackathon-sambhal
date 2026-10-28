@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sambhal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Noto+Sans+Kannada:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&display=swap">
+<link rel="stylesheet" href="/static/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E7C6B'/%3E%3Cpath d='M7 20c4-6 7-6 9-3s5 3 9-3' stroke='white' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M7 20c4-6 7-6 9-3s5 3 9-3"/></svg>
+    <div><b>Sambhal</b><small>Repayment help for merchant loans · prototype</small></div>
+  </div>
+  <div class="clock" title="Simulated time">
+    <span class="c-day" id="clockDay">—</span>
+    <span class="c-time" id="clockTime">—</span>
+    <span class="c-win" id="clockWin">—</span>
+  </div>
+  <div class="sys">
+    <span class="chip" id="chipVoice">Voice</span>
+    <span class="chip" id="chipAI">AI</span>
+    <label class="toggle" title="Force rules, templates and cached audio (no network)"><input type="checkbox" id="offlineToggle"><span>Offline</span></label>
+    <button class="ghost" id="btnClock" title="Advance to the next event">Next event</button>
+    <button class="ghost" id="btnReset">Reset</button>
+  </div>
+</header>
+
+<section class="story" aria-label="Presenter">
+  <ol class="dots" id="stepDots"></ol>
+  <div class="cap">
+    <div class="cap-title"><span id="capNum">0</span><b id="capTitle">—</b></div>
+    <p id="capText">—</p>
+  </div>
+  <div class="nav">
+    <button class="ghost" id="btnPrev" aria-label="Previous step">◀ Back</button>
+    <button class="primary" id="btnNext">Next ▶</button>
+  </div>
+</section>
+
+<main class="stage">
+  <section class="phone-col">
+    <div class="phone" id="phone">
+      <div class="ph-top">
+        <div class="ph-who"><span class="avatar" id="phAvatar">R</span><div><b id="phName">—</b><small id="phShop">—</small></div></div>
+        <label class="toggle small" title="Show English under each message"><input type="checkbox" id="enToggle" checked><span>EN</span></label>
+      </div>
+      <div class="ph-tabs" role="tablist">
+        <button role="tab" class="on" data-ptab="chat">Messages</button>
+        <button role="tab" data-ptab="sizer">Loan check</button>
+      </div>
+      <div class="ph-body" id="chat" aria-live="polite"></div>
+      <div class="ph-body" id="sizerPane" hidden>
+        <form id="sizerForm" class="sizer-form">
+          <p class="sz-intro">Before taking a loan: test the daily installment against your own slowest weeks.</p>
+          <label for="szAmount">Loan amount <output id="szAmountOut">₹2,50,000</output></label>
+          <input type="range" id="szAmount" min="25000" max="400000" step="5000" value="250000">
+          <label for="szTenure">Repay over</label>
+          <select id="szTenure"><option value="90">90 days</option><option value="180" selected>180 days</option><option value="270">270 days</option><option value="365">365 days</option></select>
+        </form>
+        <div id="sizerOut" class="sizer-out"></div>
+      </div>
+      <div class="composer" id="composer">
+        <div class="quick" id="quick"></div>
+        <form id="sendForm" class="send-row">
+          <button type="button" class="mic" id="btnMic" title="Hold to speak, or click to start and stop" aria-label="Record voice reply">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-2.1A7 7 0 0 0 19 12h-2Z"/></svg>
+          </button>
+          <input id="msgInput" autocomplete="off" placeholder="Reply as the merchant…" aria-label="Merchant reply">
+          <button class="send" id="btnSend" aria-label="Send">➤</button>
+        </form>
+        <div class="rec-note" id="recNote" hidden></div>
+      </div>
+    </div>
+    <p class="phone-note">The merchant's phone (simulated)</p>
+  </section>
+
+  <section class="console">
+    <div class="mcard" id="mCard"></div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" class="on" data-tab="cases">Lender console <span class="count" id="caseCount">0</span></button>
+      <button role="tab" data-tab="week">With vs without</button>
+      <button role="tab" data-tab="proof">Proof</button>
+      <button role="tab" data-tab="audit">Audit log <span class="count" id="auditCount">0</span></button>
+    </nav>
+    <div class="tabpane" id="tab-cases">
+      <div class="cases">
+        <div class="case-list" id="caseList"></div>
+        <div class="case-detail" id="caseDetail"></div>
+      </div>
+    </div>
+    <div class="tabpane" id="tab-week" hidden></div>
+    <div class="tabpane" id="tab-proof" hidden>
+      <div class="proof">
+        <div class="proof-col">
+          <div class="proof-head">
+            <div><h3>Scenario checks</h3><p class="muted">Every guardrail and rule, replayed as a script with an expected outcome.</p></div>
+            <button class="primary" id="btnEvals">Run all checks</button>
+          </div>
+          <div id="evalSummary" class="eval-summary"></div>
+          <div id="evalList" class="eval-list"></div>
+        </div>
+        <div class="proof-col">
+          <div class="proof-head">
+            <div><h3>Replay: 50 merchants, with and without</h3><p class="muted">Same synthetic sales, 21 Oct – 10 Nov. Only Sambhal differs.</p></div>
+            <button class="ghost" id="btnReplay">Run replay</button>
+          </div>
+          <div id="replayOut"></div>
+        </div>
+      </div>
+    </div>
+    <div class="tabpane" id="tab-audit" hidden>
+      <div class="audit-head"><label class="toggle small"><input type="checkbox" id="auditFocus"><span>Only this merchant</span></label></div>
+      <div class="tablewrap"><table class="audit"><thead><tr><th>Time</th><th>Merchant</th><th>Rule</th><th>Decision</th><th>Detail</th></tr></thead><tbody id="auditBody"></tbody></table></div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status" hidden></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

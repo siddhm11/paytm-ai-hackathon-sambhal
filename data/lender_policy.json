@@ -1,0 +1,53 @@
+{
+  "lender": "Demo NBFC",
+  "note": "Relief menu the lender pre-approves. Sambhal can only offer options from this file; the language model never sets terms.",
+  "options": [
+    {
+      "id": "PAUSE_3",
+      "kind": "pause",
+      "label": {"en": "3-day pause", "hi": "3 दिन की छूट", "kn": "3 ದಿನಗಳ ವಿರಾಮ"},
+      "max_days": 3,
+      "repay_over_days": 14,
+      "reasons": ["family_event", "temporary_closure", "illness", "business_slow"],
+      "requires_human": false,
+      "eligibility": {
+        "min_loan_age_days": 30,
+        "max_dpd": 3,
+        "min_paid_ratio": 0.8,
+        "no_relief_within_days": 90
+      }
+    },
+    {
+      "id": "HALF_14",
+      "kind": "reduce",
+      "label": {"en": "Half installment for 14 days", "hi": "14 दिन आधी किस्त", "kn": "14 ದಿನ ಅರ್ಧ ಕಂತು"},
+      "days": 14,
+      "fraction": 0.5,
+      "reasons": ["business_slow"],
+      "requires_human": false,
+      "eligibility": {
+        "min_loan_age_days": 60,
+        "max_dpd": 0,
+        "min_paid_ratio": 0.9,
+        "no_relief_within_days": 90
+      }
+    },
+    {
+      "id": "PAUSE_7_REVIEW",
+      "kind": "pause",
+      "label": {"en": "Up to 7-day pause (lender staff approve)", "hi": "7 दिन तक की छूट (लेंडर स्टाफ़ मंज़ूर करेगा)", "kn": "7 ದಿನಗಳವರೆಗೆ ವಿರಾಮ (ಸಾಲದಾತರ ಸಿಬ್ಬಂದಿ ಒಪ್ಪಿಗೆ)"},
+      "max_days": 7,
+      "repay_over_days": 30,
+      "reasons": ["medical_emergency", "bereavement", "illness", "family_event", "temporary_closure"],
+      "requires_human": true,
+      "eligibility": {
+        "min_loan_age_days": 30,
+        "max_dpd": 7,
+        "min_paid_ratio": 0.6,
+        "no_relief_within_days": 0
+      }
+    }
+  ],
+  "never_offered_by_agent": ["waiver", "interest_reduction", "settlement", "tenure_restructure"],
+  "max_options_per_message": 2
+}

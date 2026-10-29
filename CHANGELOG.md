@@ -61,7 +61,9 @@
   was heard as "23 and 25" (the dash is silent, so Saturday sounds deducted) -> spoken "ಇಪ್ಪತ್ತಮೂರರಿಂದ
   ಇಪ್ಪತ್ತೈದರವರೆಗೆ" (Hindi "से", English "to"); case endings join the number ("ಎಂಟರಿಂದ", "ಇಪ್ಪತ್ತಾರರವರೆಗೆ");
   "+" was read as English "plus" -> ಮತ್ತು / और; "ಸಂಭಾಲ್ · ಈ" ran together into "ಸಂಭಾಷಣಾ" -> a full stop after the
-  name. 156 tests. 14 affected story lines to be remade (needs credits).
+  name. 156 tests. Remade on free credit (~₹5): the 5 lines the presenter plays with a date range (Ravi's offer
+  and confirmation, Shobha's offer and confirmation, the Bellandur notice). Still the older audio, by choice:
+  4 lines with only "+", 2 with only the header pause, 4 that play only if a quick-reply chip is tapped.
 
 ## On the day (31 Oct 2026)
 - 

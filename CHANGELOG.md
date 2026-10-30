@@ -68,6 +68,10 @@
   (23ರಿಂದ 25ರವರೆಗೆ, 30ರಿಂದ 1ರವರೆಗೆ, 29ರಿಂದ 31ರವರೆಗೆ), every amount right (₹2,550, ₹182, ₹850, ₹1,680, ₹120,
   ₹560, ₹3,300, ₹235), "+" heard as ಮತ್ತು, the name never mistaken for ಸಂಭಾಷಣಾ. Story audio frozen; a copy
   of data/tts_cache (not in git) is in ../tts_cache_backup_31oct.
+- 31 Oct, 3 am, deck and docs: phone screenshots re-shot with the name spelled ಸಂಭಾಲ್ (slide 6 showed the old
+  ಸಂಭಲ್); the right-sizer, promised in the title, now shown on slide 4 and as an optional 10 s beat at step 9;
+  "125 tests" -> 156 (slides 10, 11, 15, README); slide 13 label no longer overlaps; deck fonts (DM Sans,
+  Fraunces) installed and a PDF exported with them embedded. .DS_Store files untracked.
 
 ## On the day (31 Oct 2026)
 - 

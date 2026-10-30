@@ -20,7 +20,7 @@ use the 🎙 shortcut instead.
 | 6 Weekend | With vs without | Nothing deducted, nothing overdue, no messages. |
 | 7 Monday | Payoff card | **₹1,032 vs ₹3,400.** 17% vs 57% of his sales. Never overdue vs 3 days on his record. |
 | 8 Tuesday | Audit log | Recovered, case closed, every decision logged. The closing message offers pay-ahead. |
-| 9 Prepare | Third payoff box | Pay-ahead: ₹100 on days he sells ₹6,000+. Had it been on, ₹3,800 would have covered the wedding by itself. "We don't just get him through the bad week. We get him ready for the next one." |
+| 9 Prepare | Third payoff box | Pay-ahead: ₹100 on days he sells ₹6,000+. Had it been on, ₹3,800 would have covered the wedding by itself. "We don't just get him through the bad week. We get him ready for the next one." Optional, 10 s: My loan → *New loan? Check what fits*: ₹2.5 lakh is Tight (₹1,562 a day, 26% of his slowest week); it suggests up to ₹1.9 lakh. "Ready for the next loan too, and the lender decides." |
 
 **Close (one line):** Sambhal starts where the risk score stops: the conversation, the fix, proof it worked, and
 a merchant ready for the next bad week.

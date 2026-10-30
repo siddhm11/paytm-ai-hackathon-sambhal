@@ -205,7 +205,7 @@ earlier, on days when it hurts least. A lender would need to confirm there is no
 | Early-warning rule, neighbourhood alerts, policy engine, ledger maths, pay-ahead, guardrails, audit | Merchants, loans and sales (synthetic) |
 | Sarvam speech-to-text and text-to-speech (tested live with a key on 29 Oct) | Paytm settlement feed and lender systems |
 | Sarvam LLM understanding of free-form replies (tested live), rules reader always | Merchant replies for the background shops |
-| 40 scenario checks, 125 tests, with/without replay, what-if | Lender staff decisions in the replay; delivery channel (shown as an app, not WhatsApp/SMS) |
+| 40 scenario checks, 156 tests, with/without replay, what-if | Lender staff decisions in the replay; delivery channel (shown as an app, not WhatsApp/SMS) |
 
 ## Configuration (`.env`)
 
@@ -226,7 +226,7 @@ stepping through the week never waits on the network.
 ## Tests
 
 ```bash
-pytest -q                       # 125 tests: all 40 scenarios, the story, replay, readers, reply safety, pay-ahead,
+pytest -q                       # 156 tests: all 40 scenarios, the story, replay, readers, reply safety, pay-ahead,
                                 #   tell us first, neighbourhood alert, staff actions, what-if, promises, server start,
                                 #   mocked LLM and Sarvam (tests never touch the network)
 python scripts/run_evals.py     # human-readable report

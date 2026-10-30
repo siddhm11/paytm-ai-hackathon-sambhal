@@ -64,6 +64,10 @@
   name. 156 tests. Remade on free credit (~₹5): the 5 lines the presenter plays with a date range (Ravi's offer
   and confirmation, Shobha's offer and confirmation, the Bellandur notice). Still the older audio, by choice:
   4 lines with only "+", 2 with only the header pause, 4 that play only if a quick-reply chip is tapped.
+- 31 Oct, 2 am, third Wispr listening test on those 5 lines: all 5 date ranges heard as "from X to Y"
+  (23ರಿಂದ 25ರವರೆಗೆ, 30ರಿಂದ 1ರವರೆಗೆ, 29ರಿಂದ 31ರವರೆಗೆ), every amount right (₹2,550, ₹182, ₹850, ₹1,680, ₹120,
+  ₹560, ₹3,300, ₹235), "+" heard as ಮತ್ತು, the name never mistaken for ಸಂಭಾಷಣಾ. Story audio frozen; a copy
+  of data/tts_cache (not in git) is in ../tts_cache_backup_31oct.
 
 ## On the day (31 Oct 2026)
 - 

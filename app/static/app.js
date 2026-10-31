@@ -182,11 +182,42 @@ let screen = "home";        // merchant app screen: home | chat | loan
 let reasonMode = false;     // "Tell us about a closure" opens the reason picker
 const seenOut = {};         // per merchant: newest outbound message seen on the Messages screen
 
+// The phone's language for the audience: "en" (the default, so judges can read it) or "local" (the merchant's own).
+// The merchant's language never changes on the server, and every message is stored in it and in English, so
+// switching only changes what the phone shows and which voice note plays.
+let dispLang = "en";
+const LOCAL_NAME = { kn: "ಕನ್ನಡ", hi: "हिंदी" };
+const ownLang = () => S.merchant._own || S.merchant.lang;
+const INDIC = /[ऀ-ॿಀ-೿]/;
+function localize() {
+  const m = S?.merchant; if (!m) return;
+  if (!m._own) m._own = m.lang;
+  const en = dispLang === "en" && m._own !== "en";
+  m.lang = en ? "en" : m._own;
+  for (const msg of m.thread || []) {
+    if (!msg._o) msg._o = { lang: msg.lang, text: msg.text, header: msg.header, labels: (msg.options || []).map(o => o.label) };
+    // Outbound: the English version. Inbound: English only if the merchant didn't already write or speak English.
+    const sw = en && msg._o.lang !== "en" && !!msg.text_en && (msg.dir === "out" || INDIC.test(msg._o.text));
+    msg.lang = sw ? "en" : msg._o.lang;
+    msg.text = sw ? msg.text_en : msg._o.text;
+    msg.header = sw && msg.header_en ? msg.header_en : msg._o.header;
+    msg.said = sw && msg.dir === "in" ? { lang: msg._o.lang, text: msg._o.text } : null;
+    (msg.options || []).forEach((o, i) => { o.label = sw && o.label_en ? o.label_en : msg._o.labels[i]; });
+  }
+}
+function setLang(l) {
+  if (l === dispLang || !S) return;
+  dispLang = l; render();
+  if (screen === "chat") {      // on the Messages screen, play the latest voice note in the new language
+    const last = [...S.merchant.thread].reverse().find(x => x.dir === "out");
+    if (last) playMsg(last.id);
+  }
+}
 const ML = () => S.merchant.lang;
 function t(k, lang = ML()) { return (UI[lang] || UI.en)[k] ?? UI.en[k] ?? k; }
 function tf(k, vars, lang = ML()) { return t(k, lang).replace(/\{(\w+)\}/g, (_, v) => vars[v] ?? ""); }
 function tt(k) {
-  const lang = ML(), en = $("#enToggle").checked && lang !== "en";
+  const lang = ML(), en = lang !== "en";
   return `<span ${langAttr(lang)}>${esc(t(k))}</span>${en ? `<small class="en-sub">${esc(t(k, "en"))}</small>` : ""}`;
 }
 function ldate(iso, opts = { weekday: "short", day: "numeric", month: "short" }) {
@@ -197,10 +228,14 @@ const lday = iso => `${ldate(iso, { weekday: "short" })} ${D(iso).getDate()}`;
 function setScreen(s) { screen = s; if (s !== "chat") reasonMode = false; renderPhone(); }
 
 function renderPhone() {
-  const m = S.merchant;
+  localize();
+  const m = S.merchant, own = ownLang();
   $("#phAvatar").textContent = m.first[0];
   $("#phName").textContent = m.owner;
-  $("#phShop").textContent = `${m.shop} · ${LANG_LABEL[m.lang]}`;
+  $("#phShop").textContent = own === "en" ? `${m.shop} · English` : m.shop;     // the switch names his language
+  $("#langSw").hidden = own === "en";
+  $("#langLocal").textContent = LOCAL_NAME[own] || "";
+  $$("#langSw button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.l === dispLang)));
   $$(".ph-nav button").forEach(b => {
     b.classList.toggle("on", b.dataset.scr === screen);
     b.querySelector("span").innerHTML = tt({ home: "home", chat: "messages", loan: "loan" }[b.dataset.scr]);
@@ -267,7 +302,7 @@ function renderHome() {
 }
 
 function openPromise() {
-  const m = S.merchant, lang = m.lang, showEn = $("#enToggle").checked && lang !== "en";
+  const m = S.merchant, lang = m.lang, showEn = lang !== "en";
   const items = S.promises.map(p => `<li><span class="ic">${p.icon}</span><span><span ${langAttr(lang)}>${esc(p.text[lang])}</span>${showEn ? `<small class="en-sub">${esc(p.text.en)}</small>` : ""}</span></li>`).join("");
   const sheet = $("#sheet");
   sheet.innerHTML = `<div class="sh-head"><b>${tt("promise")}</b><button class="sh-x" aria-label="Close">✕</button></div>
@@ -292,7 +327,7 @@ function openPlanner() {
   const chip = (attr, val, on, label) => `<button class="pchip ${on ? "on" : ""}" data-${attr}="${val}" ${langAttr(lang)}>${label}</button>`;
   sheet.innerHTML = `<div class="sh-head"><b>${tt("tell_closure")}</b><button class="sh-x" aria-label="Close">✕</button></div>
     <p class="r-title">${tt("pick_reason")}</p>
-    <div class="r-row r-2">${Object.entries(S.plan_reasons).map(([k, v]) => `<button type="button" class="r-btn ${plan.reason === k ? "on" : ""}" data-reason="${k}"><span class="ic">${PLAN_ICON[k]}</span><span><span ${langAttr(lang)}>${esc(v[lang])}</span>${$("#enToggle").checked && lang !== "en" ? `<small class="en-sub">${esc(v.en)}</small>` : ""}</span></button>`).join("")}</div>
+    <div class="r-row r-2">${Object.entries(S.plan_reasons).map(([k, v]) => `<button type="button" class="r-btn ${plan.reason === k ? "on" : ""}" data-reason="${k}"><span class="ic">${PLAN_ICON[k]}</span><span><span ${langAttr(lang)}>${esc(v[lang])}</span>${lang !== "en" ? `<small class="en-sub">${esc(v.en)}</small>` : ""}</span></button>`).join("")}</div>
     <p class="r-title">${tt("from_day")}</p>
     <div class="pchips">${dates.map(d => chip("start", d, d === plan.start, esc(lday(d)))).join("")}</div>
     <p class="r-title">${tt("how_many")}</p>
@@ -318,7 +353,7 @@ function homeAction(k) {
 }
 
 function renderChat() {
-  const m = S.merchant, c = m.case, showEn = $("#enToggle").checked;
+  const m = S.merchant, c = m.case, showEn = true;
   const chat = $("#chat");
   const atBottom = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 60;
   let html = "";
@@ -393,6 +428,7 @@ function inBubble(msg, showEn) {
   return `<div class="bubble in">
     <div class="body" ${langAttr(msg.lang)}>${esc(msg.text)}</div>
     ${showEn && (msg.lang !== "en" || msg.kind === "accept") && msg.text_en ? `<div class="en">${esc(msg.text_en)}</div>` : ""}
+    ${msg.said ? `<div class="en" ${langAttr(msg.said.lang)}>${esc(msg.said.text)}</div>` : ""}
     <div class="meta"><span>${via}${sim}</span><span>${fmtTime(msg.at)}</span></div>
   </div>`;
 }
@@ -458,7 +494,7 @@ function renderMCard() {
   const m = S.merchant, L = m.loan, c = m.case;
   const status = c ? pill(c.state) : `<span class="pill st-ok">No open case</span>`;
   $("#mCard").innerHTML = `
-    <div><h2>${esc(m.owner)}</h2><div class="sub">${esc(m.shop)} · ${esc(m.area)} · ${LANG_LABEL[m.lang]}${m.consent ? "" : " · <b>no messaging consent</b>"}</div><div style="margin-top:6px">${status}</div></div>
+    <div><h2>${esc(m.owner)}</h2><div class="sub">${esc(m.shop)} · ${esc(m.area)} · ${LANG_LABEL[ownLang()]}${m.consent ? "" : " · <b>no messaging consent</b>"}</div><div style="margin-top:6px">${status}</div></div>
     <div class="facts">
       <div class="fact"><span>Daily installment</span><b>${inr(L.installment)}</b></div>
       <div class="fact"><span>Outstanding</span><b>${inr(L.outstanding)}</b></div>
@@ -854,10 +890,10 @@ async function toggleMic() {
   const mic = $("#btnMic"), note = $("#recNote");
   if (rec && rec.state === "recording") { rec.stop(); return; }
   if (recog) { recog.stop(); return; }
-  const lang = S.merchant.lang;
+  const lang = dispLang === "en" ? "" : ownLang();     // English on screen: let speech-to-text detect the language
   if (!S.status.voice.on && ("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
     const R = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recog = new R(); recog.lang = { kn: "kn-IN", hi: "hi-IN", en: "en-IN" }[lang]; recog.interimResults = false;
+    recog = new R(); recog.lang = { kn: "kn-IN", hi: "hi-IN", en: "en-IN" }[lang] || "en-IN"; recog.interimResults = false;
     mic.classList.add("rec"); note.hidden = false; note.textContent = "Listening (browser speech)… click again to stop";
     recog.onresult = e => { const t = e.results[0][0].transcript; note.textContent = `Heard: ${t}`; sendInbound(t, "voice"); };
     recog.onerror = e => { note.textContent = `Browser speech failed (${e.error}). Type the reply instead.`; };
@@ -897,7 +933,7 @@ async function runSizer() {
     $("#sizerOut").innerHTML = `
       <div class="verdict ${r.verdict}"><span class="v">${vLabel}</span><span class="big">${inr(r.installment)} a day</span>
         <span>${pct(r.share_of_worst_week)} of your slowest week's sales (keep it under ${pct(r.safe_share)})</span></div>
-      <p class="settle" ${langAttr(S.merchant.lang)} style="font-size:13.5px;margin:0">${esc(r.line)}${S.merchant.lang !== "en" ? `<br><span class="muted" lang="en">${esc(r.line_en)}</span>` : ""}</p>
+      <p class="settle" ${langAttr(S.merchant.lang)} style="font-size:13.5px;margin:0">${esc(S.merchant.lang === "en" ? r.line_en || r.line : r.line)}${S.merchant.lang !== "en" ? `<br><span class="muted" lang="en">${esc(r.line_en)}</span>` : ""}</p>
       <div class="kv"><span>Suggested up to</span><span>${inr(r.suggested_max)}</span><span>Slowest week</span><span>${inr(r.worst_week_sales)}</span><span>Typical week</span><span>${inr(r.typical_week_sales)}</span><span>Total repayable</span><span>${inr(r.total)}</span></div>
       <p class="muted" style="font-size:11.5px;margin:0">${esc(r.pricing_note)}</p>`;
   } catch (e) { $("#sizerOut").innerHTML = `<p class="muted">${esc(e.message)}</p>`; }
@@ -907,10 +943,10 @@ async function runSizer() {
 function wire() {
   $("#btnNext").onclick = () => goStep(S.step + 1);
   $("#btnPrev").onclick = () => goStep(S.step - 1);
-  $("#btnReset").onclick = () => act(async () => { lastSpoken = Infinity; S = await post("/api/reset"); focus = "M01"; lastSpoken = maxOutId(); proofLoaded = false; render(); });
+  $("#btnReset").onclick = () => act(async () => { lastSpoken = Infinity; S = await post("/api/reset"); focus = "M01"; dispLang = "en"; lastSpoken = maxOutId(); proofLoaded = false; render(); });
   $("#btnClock").onclick = () => act(async () => { S = await post("/api/advance", { next_event: true }); render(); autoSpeak(); });
   $("#offlineToggle").onchange = e => act(async () => { await post("/api/offline", { on: e.target.checked }); await load(); toast(e.target.checked ? "Offline: rules, templates and cached audio only" : "Online: Sarvam and the LLM are used if keys are set"); });
-  $("#enToggle").onchange = renderPhone;
+  $$("#langSw button").forEach(b => (b.onclick = () => setLang(b.dataset.l)));
   $("#auditFocus").onchange = renderAudit;
   $("#sendForm").onsubmit = e => { e.preventDefault(); const t = $("#msgInput").value.trim(); if (t) sendInbound(t, "text"); };
   $("#btnMic").onclick = toggleMic;
@@ -944,11 +980,13 @@ function wire() {
 
 // Deep links, for screenshots and sharing a moment of the demo:
 //   ?step=7&tab=week   ?step=9&focus=M01&screen=home   ?sheet=promise|plan   ?phone=1 (the app alone)   ?welcome=0
+//   ?lang=kn (the phone in the merchant's own language instead of English)
 async function deepLink() {
   const q = new URLSearchParams(location.search);
   if (![...q.keys()].length) return;
   if (q.get("phone") === "1") document.body.classList.add("phone-only");
   if (q.get("welcome") === "0" || q.get("phone") === "1") $("#welcome").hidden = true;
+  if (q.has("lang")) { dispLang = q.get("lang") === "en" ? "en" : "local"; render(); }
   if (q.has("step")) await goStep(+q.get("step"));
   if (q.has("focus")) await load(q.get("focus"));
   if (q.has("screen")) setScreen(q.get("screen"));

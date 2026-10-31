@@ -88,6 +88,7 @@ class Message:
             "nlu": self.nlu, "draft": self.draft,
             "held_once": self.held_once.isoformat() if self.held_once else None, "held_reason": self.held_reason,
             "header": replies.header(self.lang) if self.dir == "out" else None,
+            "header_en": replies.header("en") if self.dir == "out" else None,    # the phone can show any message in English
             "footer": replies.footer() if self.dir == "out" else None,
         }
 

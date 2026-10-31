@@ -494,3 +494,11 @@ body.phone-only .phone { height: calc(100vh - 28px); max-height: none; flex: non
   .top { flex-wrap: wrap; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* Phone language: English for the audience, one tap to the merchant's own language */
+.ph-who > div { min-width: 0; }
+.lang-sw { flex: none; display: inline-flex; border: 1px solid var(--rule); border-radius: 999px; padding: 2px; gap: 2px; background: var(--sheet); }
+.lang-sw button { border: 0; background: transparent; font-size: 12px; line-height: 1; padding: 6px 10px; border-radius: 999px; color: var(--ink-2); }
+.lang-sw button#langLocal { font-family: var(--f-kn); }
+.lang-sw button[aria-pressed="true"] { background: var(--teal); color: #fff; }
+.lang-sw button:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }

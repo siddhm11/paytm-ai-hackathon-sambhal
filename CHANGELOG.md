@@ -72,6 +72,12 @@
   ಸಂಭಲ್); the right-sizer, promised in the title, now shown on slide 4 and as an optional 10 s beat at step 9;
   "125 tests" -> 156 (slides 10, 11, 15, README); slide 13 label no longer overlaps; deck fonts (DM Sans,
   Fraunces) installed and a PDF exported with them embedded. .DS_Store files untracked.
+- 31 Oct, 4 am, English first: the phone opens in English so judges can follow, with one tap to the merchant's
+  own language ([English | ಕನ್ನಡ] in the phone header). Ravi is still a Kannada merchant: the server, rules, amounts
+  and tests are unchanged, and every message already carried its English text; only what the phone shows and
+  plays changes. In English mode the mic detects the language. Step 3's caption cues the ಕನ್ನಡ moment. The 11
+  English story voice notes were made with Sarvam (about ₹10 of free credit) and all passed listen-back.
+  `warm_voice_cache.py --story` now covers them; `check_mic.py` still tests the Kannada mic. 157 tests.
 
 ## On the day (31 Oct 2026)
 - 

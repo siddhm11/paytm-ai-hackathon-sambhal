@@ -78,7 +78,7 @@ lender what-if and the audit log.
 | 0 | Wed 21 Oct, 10:00 | Ravi: kirana in Basavanagudi, ₹1,36,000 loan, ₹850 a day, 71 installments without a miss |
 | 1 | Wed 9:05 pm | Sales 48% of normal. One slow day: Sambhal only watches |
 | 2 | Thu 9:05 pm | Second day below half (31%). Case opened. 9 pm is outside 8 am–7 pm, so the message is **held** |
-| 3 | Fri 8:00 am | Check-in in Kannada, voice and text, recording notice, grievance officer |
+| 3 | Fri 8:00 am | Check-in by voice and text, recording notice, grievance officer. The phone shows English; tap ಕನ್ನಡ to see and hear it as Ravi does |
 | 4 | Fri 8:20 am | Ravi replies by voice: *ಮನೆಯಲ್ಲಿ ಮದುವೆ ಇದೆ, ಭಾನುವಾರದವರೆಗೆ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತೆ* (wedding at home, shop shut till Sunday). Sambhal offers the lender's 3-day pause |
 | 5 | Fri 8:22 am | Ravi taps Accept. The pause is written to the deduction calendar. Quiet until Monday (family function) |
 | 6 | Sun 9:05 pm | Shop shut. No deduction, nothing overdue, no messages |

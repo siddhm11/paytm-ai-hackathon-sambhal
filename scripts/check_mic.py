@@ -50,7 +50,7 @@ MIC = """(() => {
   };
 })()"""
 RUN = """(async () => {
-  await goStep(%d); screen = "chat"; renderPhone();
+  dispLang = "local"; await goStep(%d); screen = "chat"; renderPhone();    // Kannada on the phone, Kannada mic
   await toggleMic(); await new Promise(r => setTimeout(r, 6500)); toggleMic();
   for (let i = 0; i < 80; i++) {
     await new Promise(r => setTimeout(r, 250));

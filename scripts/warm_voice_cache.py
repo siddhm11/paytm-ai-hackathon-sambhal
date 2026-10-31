@@ -35,6 +35,8 @@ def outbound(w: World, only: set | None = None):
         for m in c.messages:
             if m.dir == "out":
                 yield f"{replies.header(m.lang)}. {m.text}", m.lang
+                if only and m.lang != "en":     # the story phone opens in English: its English voice note too
+                    yield f"{replies.header('en')}. {m.text_en}", "en"
 
 
 def collect(story: bool = False):
@@ -56,7 +58,7 @@ def collect(story: bool = False):
         w.set_consent("M01", on)
     w.set_cushion("M01", False)
     lines.update({t: l for t, l in outbound(w, only)})
-    for lang in ("kn",) if story else ("kn", "hi", "en"):     # Sambhal's promise, read aloud
+    for lang in ("kn", "en") if story else ("kn", "hi", "en"):     # Sambhal's promise, read aloud
         lines[" ".join(p["text"][lang] for p in replies.PROMISES)] = lang
     for text in TRY_LINES:                    # what the quick-reply chips can trigger on stage
         w = World(use_llm=False)

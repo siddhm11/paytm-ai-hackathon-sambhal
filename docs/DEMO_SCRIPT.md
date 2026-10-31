@@ -4,18 +4,18 @@ Cue points to talk from, not lines to memorise. → advances a step. Each step o
 console panel by itself and briefly highlights what to point at (gold glow), so you never hunt for a tab.
 Tick **Big text** in the header on a projector.
 
-**Before you start:** server running, browser at `localhost:8000`, **Reset** pressed, welcome card closed, volume
-up, phone hotspot ready. Header chips should say *Voice: Sarvam* and *AI: sarvam-105b* (or flip **Offline**).
+**Before you start:** server running, browser at `localhost:8000`, **Reset** pressed (the phone opens in **English**),
+welcome card closed, volume up, phone hotspot ready. Header chips should say *Voice: Sarvam* and *AI: sarvam-105b* (or flip **Offline**).
 `python scripts/check_mic.py` passed on this network (then Reset). Speak close to the laptop; if the room is loud,
 use the 🎙 shortcut instead.
 
 | Step | Glows on | Say (cue points) |
 |---|---|---|
-| 0 Meet Ravi | Phone home | Kirana, ₹850 a day from his settlement, 71 in a row, never missed. Paytm sees his sales every evening. A bank doesn't. This is his app, in Kannada. |
+| 0 Meet Ravi | Phone home | Kirana, ₹850 a day from his settlement, 71 in a row, never missed. Paytm sees his sales every evening. A bank doesn't. This is his app, shown in English for you; Ravi uses it in Kannada. |
 | 1 Wed | Last-settlement card | One slow day, 48%. Sambhal does nothing. "Not every dip is a crisis." |
 | 2 Thu 9 pm | Guardrails, contact hours | Two days below half → case opened **before anything is missed**. It's 9 pm: RBI window is 8–7, so the code holds it. |
-| 3 Fri 8 am | Voice note | Kannada, voice. Recording notice, grievance officer. Help, not a demand. One-tap reasons for merchants who'd rather not type. |
-| 4 Ravi replies | How Sambhal read it | Speak the line (or tap the 🎙 shortcut). "Wedding at home, shut till Sunday." Family function, 3 days: **the days come from code, not the AI**. |
+| 3 Fri 8 am | Voice note | The voice note plays in English. Recording notice, grievance officer. Help, not a demand. **Tap ಕನ್ನಡ** on the phone: "this is what Ravi actually hears" (the Kannada note plays), then tap **English** again. One-tap reasons for merchants who'd rather not type. |
+| 4 Ravi replies | How Sambhal read it | Speak the line in English, "There's a wedding at home, the shop is closed till Sunday" (or tap the 🎙 shortcut). Family function, 3 days: **the days come from code, not the AI**. |
 | 5 Accept | Deduction calendar | The pause comes from the lender's menu file. Fri–Sun paused, ₹1,032 from Monday. Quiet until Monday. |
 | 6 Weekend | With vs without | Nothing deducted, nothing overdue, no messages. |
 | 7 Monday | Payoff card | **₹1,032 vs ₹3,400.** 17% vs 57% of his sales. Never overdue vs 3 days on his record. |
@@ -53,6 +53,6 @@ with evidence before it goes live."
 | Problem | Do this |
 |---|---|
 | Wifi dies | Flip **Offline** in the header. Rules + templates + cached audio carry the whole story. |
-| Mic doesn't hear | Tap the 🎙 Ravi shortcut under the phone (presenter shortcuts). |
+| Mic doesn't hear | Tap the 🎙 Ravi shortcut under the phone (presenter shortcuts). In English mode the mic detects the language, so speak English or Kannada. |
 | No sound | Read the English line under the bubble; keep going. |
 | Page stuck | Reset, then click step dot 7 (it replays instantly). |

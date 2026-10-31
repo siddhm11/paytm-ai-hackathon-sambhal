@@ -20,3 +20,13 @@ def test_story_through_the_api():
     assert week["2026-10-26"]["with"]["deducted"] == 1032
     assert client.post("/api/advance", json={"hours": 2}).status_code == 200
     assert client.get("/api/audit", params={"merchant": "M01"}).json()["total"] > 0
+
+
+def test_every_outbound_message_can_be_shown_in_english():
+    # The phone opens in English for the audience (one tap to the merchant's language): each message carries both.
+    s = client.post("/api/step", json={"n": 5}).json()
+    out = [m for m in s["merchant"]["thread"] if m["dir"] == "out"]
+    assert out and all(m["header_en"] and m["text_en"] for m in out)
+    assert all(m["lang"] == "kn" for m in out)          # Ravi still gets Kannada; only the view changes
+    inbound = [m for m in s["merchant"]["thread"] if m["dir"] == "in"]
+    assert any("wedding" in m["text_en"].lower() for m in inbound)

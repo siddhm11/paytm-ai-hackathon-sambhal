@@ -17,8 +17,8 @@ STEPS = [
                 "RBI's 8 am–7 pm window, so the message waits."},
     {"at": "2026-10-23T08:00", "title": "Friday 8 am: Sambhal checks in", "phone": "chat", "tab": "cases",
      "spot": "voice",
-     "caption": "In Kannada, by voice and text, with a recording notice and the grievance officer's details. "
-                "It offers help, not a demand."},
+     "caption": "A voice note and text in Ravi's language, with a recording notice and the grievance officer's "
+                "details. It offers help, not a demand. Tap ಕನ್ನಡ on the phone to hear what Ravi hears."},
     {"at": "2026-10-23T08:20", "title": "Ravi replies by voice", "action": "ravi_reply", "phone": "chat",
      "tab": "cases", "spot": "reading",
      "caption": "“ಮನೆಯಲ್ಲಿ ಮದುವೆ ಇದೆ, ಭಾನುವಾರದವರೆಗೆ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತೆ.” There's a wedding at home; the shop is shut "

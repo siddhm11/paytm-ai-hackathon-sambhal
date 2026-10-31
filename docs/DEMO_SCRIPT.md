@@ -19,7 +19,7 @@ App: `localhost:8000`, **Reset** pressed, welcome card closed, phone in **Englis
 | 3:50 | Slide 5 | Lenders pay, merchants never do: inside Paytm it lifts collections Paytm already earns on; outside, a Pi module per loan plus an outcome fee. |
 | 4:05 | Slide 6 | A score says who is at risk. Sambhal changes what happens next. |
 
-If the mic misbehaves at 2:00, tap **Next** instead: step 4 adds Ravi's reply for you. If you're behind at 1:15, click
+Three safe ways to give Ravi's reply at 2:00, all giving the 3-day story: say the line with **"till Sunday"**, tap **Family function**, or press **Next** (step 4 adds his reply). Don't say another number of days: "two days" would offer 2, and Monday's numbers would no longer match the slides. If you're behind at 1:15, click
 dot **3** straight from dot 0 (the note still plays). Steps 10–13 and the what-if are for questions only.
 
 ---

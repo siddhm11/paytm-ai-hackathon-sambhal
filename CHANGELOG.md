@@ -78,6 +78,12 @@
   plays changes. In English mode the mic detects the language. Step 3's caption cues the ಕನ್ನಡ moment. The 11
   English story voice notes were made with Sarvam (about ₹10 of free credit) and all passed listen-back.
   `warm_voice_cache.py --story` now covers them; `check_mic.py` still tests the Kannada mic. 157 tests.
+- 31 Oct, 11 am, voice timing for the stage: only the check-in note plays by itself (the others run 15-35 s and
+  filled two minutes of a three-minute demo; tap ▶ to play them). Fixed: stepping 2 → 3 never auto-played the
+  check-in, because Thursday night's held message counted as already heard. A playing note now stops on Next
+  and when switching back to English; ಕನ್ನಡ plays the note in his language. `check_mic.py` adds Ravi's line
+  spoken in English (as on stage). Venue network checks: keys pass (voice 1.4 s, STT 0.8 s, AI 1.0 s), mic passes
+  in English and Kannada (heard in ~0.4 s).
 
 ## On the day (31 Oct 2026)
 - 

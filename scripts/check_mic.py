@@ -1,7 +1,7 @@
 """End-to-end voice check, before you go on stage:  python scripts/check_mic.py [--port 8000]
 
-Needs the app running, a Sarvam key in .env, internet and Google Chrome. It records three Kannada replies in a
-different Sarvam voice (a male merchant), plays each one into the app as its microphone, presses Sambhal's own mic
+Needs the app running, a Sarvam key in .env, internet and Google Chrome. It records an English reply and three Kannada
+replies in a different Sarvam voice (a male merchant), plays each one into the app as its microphone, presses Sambhal's own mic
 button and checks what comes back: browser recording -> /api/stt -> Sarvam speech-to-text -> reader -> reply.
 
 It moves the presenter to steps 3-4 and adds replies to Ravi's case: press Reset in the app afterwards.
@@ -32,10 +32,11 @@ except ImportError:
     sys.exit("Install the browser driver first:  pip install websocket-client")
 
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-CASES = [  # name, presenter step, what the merchant says, what Sambhal must understand
-    ("Ravi's line", 3, "ಮನೆಯಲ್ಲಿ ಮದುವೆ ಇದೆ, ಭಾನುವಾರದವರೆಗೆ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತೆ.", "family_event"),
-    ("Fever, off-script", 3, "ನನಗೆ ಜ್ವರ ಬಂದಿದೆ, ಎರಡು ದಿನ ಅಂಗಡಿ ತೆರೆಯಲ್ಲ.", "illness"),
-    ("'Okay, but why only 3 days?'", 4, "ಸರಿ, ಆದರೆ ಯಾಕೆ ಮೂರೇ ದಿನ? ನನಗೆ ಇನ್ನೂ ಹೆಚ್ಚು ದಿನ ಬೇಕು.", "need_time"),
+CASES = [  # name, presenter step, phone language, what the merchant says, what Sambhal must understand
+    ("Ravi's line, in English (as on stage)", 3, "en", "There's a wedding at home, the shop is closed till Sunday.", "family_event"),
+    ("Ravi's line", 3, "kn", "ಮನೆಯಲ್ಲಿ ಮದುವೆ ಇದೆ, ಭಾನುವಾರದವರೆಗೆ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತೆ.", "family_event"),
+    ("Fever, off-script", 3, "kn", "ನನಗೆ ಜ್ವರ ಬಂದಿದೆ, ಎರಡು ದಿನ ಅಂಗಡಿ ತೆರೆಯಲ್ಲ.", "illness"),
+    ("'Okay, but why only 3 days?'", 4, "kn", "ಸರಿ, ಆದರೆ ಯಾಕೆ ಮೂರೇ ದಿನ? ನನಗೆ ಇನ್ನೂ ಹೆಚ್ಚು ದಿನ ಬೇಕು.", "need_time"),
 ]
 
 # The recording stands in for the microphone; everything after it is the real app.
@@ -50,7 +51,7 @@ MIC = """(() => {
   };
 })()"""
 RUN = """(async () => {
-  dispLang = "local"; await goStep(%d); screen = "chat"; renderPhone();    // Kannada on the phone, Kannada mic
+  dispLang = "%s"; await goStep(%d); screen = "chat"; renderPhone();    // phone language decides the mic's
   await toggleMic(); await new Promise(r => setTimeout(r, 6500)); toggleMic();
   for (let i = 0; i < 80; i++) {
     await new Promise(r => setTimeout(r, 250));
@@ -66,10 +67,10 @@ RUN = """(async () => {
 })()"""
 
 
-def say(text: str) -> bytes:
+def say(text: str, lang: str) -> bytes:
     r = httpx.post(f"{config.SARVAM_BASE}/text-to-speech", timeout=30,
                    headers={"api-subscription-key": config.SARVAM_API_KEY, "Content-Type": "application/json"},
-                   json={"text": text, "language_code": "kn-IN", "model": config.TTS_MODEL, "speaker": "aditya",
+                   json={"text": text, "language_code": {"en": "en-IN"}.get(lang, "kn-IN"), "model": config.TTS_MODEL, "speaker": "aditya",
                          "speech_sample_rate": 16000, "pace": 0.95})
     r.raise_for_status()
     return base64.b64decode(r.json()["audios"][0])
@@ -85,7 +86,7 @@ def evaluate(ws, expr, seq=[0]):
             return msg["result"]["result"].get("value")
 
 
-def run(port: int, step: int, audio: bytes, tmp: Path) -> dict:
+def run(port: int, step: int, phone: str, audio: bytes, tmp: Path) -> dict:
     chrome = subprocess.Popen([CHROME, "--headless=new", "--remote-debugging-port=9339", f"--user-data-dir={tmp}",
                                "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required",
                                "--mute-audio", f"http://localhost:{port}/?welcome=0"],
@@ -104,7 +105,7 @@ def run(port: int, step: int, audio: bytes, tmp: Path) -> dict:
                 break
             time.sleep(0.5)
         evaluate(ws, MIC % base64.b64encode(audio).decode())
-        return json.loads(evaluate(ws, RUN % step))
+        return json.loads(evaluate(ws, RUN % ("en" if phone == "en" else "local", step)))
     finally:
         chrome.terminate()
         chrome.wait(10)
@@ -127,8 +128,8 @@ def main():
     print("Sambhal end-to-end voice check")
     ok = True
     with tempfile.TemporaryDirectory() as td:
-        for name, step, text, want in CASES:
-            res = run(port, step, say(text), Path(td) / name.replace(" ", "_").replace("'", ""))
+        for name, step, phone, text, want in CASES:
+            res = run(port, step, phone, say(text, phone), Path(td) / "".join(ch for ch in name if ch.isalnum()))
             good = res.get("intent") == want and not res.get("accepted")
             ok &= good
             print(f"  [{'PASS' if good else 'FAIL'}] {name}: {res.get('note')}")

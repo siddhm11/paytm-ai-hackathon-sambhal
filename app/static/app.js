@@ -54,9 +54,13 @@ async function load(f) {
   if (f) focus = f;
   S = await api(`/api/state?focus=${focus}`);
   focus = S.focus;
-  if (lastSpoken === Infinity) lastSpoken = maxOutId();
+  if (lastSpoken === Infinity) lastSpoken = sentOutId();
   if (seenOut[focus] === undefined) seenOut[focus] = maxOutId();
   render();
+}
+function sentOutId() {         // newest note actually delivered: a held message (Thursday night) isn't heard yet
+  const th = S?.merchant?.thread || [];
+  return Math.max(0, ...th.filter(m => m.dir === "out" && m.status === "sent").map(m => m.id));
 }
 function maxOutId() {
   const th = S?.merchant?.thread || [];
@@ -207,8 +211,8 @@ function localize() {
 }
 function setLang(l) {
   if (l === dispLang || !S) return;
-  dispLang = l; render();
-  if (screen === "chat") {      // on the Messages screen, play the latest voice note in the new language
+  dispLang = l; stopVoice(); render();
+  if (l === "local" && screen === "chat") {      // "this is what Ravi hears": play the latest note in his language
     const last = [...S.merchant.thread].reverse().find(x => x.dir === "out");
     if (last) playMsg(last.id);
   }
@@ -542,7 +546,7 @@ function renderAlerts() {
     </div>`;
   }).join("");
   $$("[data-area]", el).forEach(b => (b.onclick = () => act(async () => { S = await post("/api/area", { alert_id: b.dataset.area, days: 3 }); render(); })));
-  $$(".ac-shop", el).forEach(b => (b.onclick = () => { lastSpoken = Infinity; load(b.dataset.mid).then(() => { lastSpoken = maxOutId(); }); }));
+  $$(".ac-shop", el).forEach(b => (b.onclick = () => { lastSpoken = Infinity; load(b.dataset.mid).then(() => { lastSpoken = sentOutId(); }); }));
 }
 
 function renderCases() {
@@ -556,7 +560,7 @@ function renderCases() {
         <span class="nm">${esc(c.merchant)}${c.demo ? '<span class="demo">DEMO</span>' : ""}</span>${pill(c.state)}
         <span class="rs">${esc(c.human_reason || (c.held_until ? `Held until ${fmtDayTime(c.held_until)}` : c.trigger || ""))}</span>
       </button>`).join("");
-    $$(".crow", list).forEach(b => (b.onclick = () => { lastSpoken = Infinity; load(b.dataset.mid).then(() => { lastSpoken = maxOutId(); }); }));
+    $$(".crow", list).forEach(b => (b.onclick = () => { lastSpoken = Infinity; load(b.dataset.mid).then(() => { lastSpoken = sentOutId(); }); }));
   }
   renderCaseDetail();
 }
@@ -787,10 +791,11 @@ async function act(fn) {
 function goStep(n) {
   return act(async () => {
     const prevStep = S.step;
+    stopVoice();                // a note from the last step never talks over the next one
     if (n < prevStep) lastSpoken = Infinity;
     S = await post("/api/step", { n }); focus = S.focus;
     $("#sheet").hidden = true;
-    if (lastSpoken === Infinity) lastSpoken = maxOutId();
+    if (lastSpoken === Infinity) lastSpoken = sentOutId();
     render(); await applyStep(); autoSpeak();
   });
 }
@@ -852,7 +857,7 @@ function setCushion(on) {
 }
 function autoSpeak() {
   const fresh = S.merchant.thread.filter(m => m.dir === "out" && m.status === "sent" && m.id > lastSpoken);
-  lastSpoken = maxOutId();
+  lastSpoken = sentOutId();
   // Only the check-in plays by itself (Friday 8 am, the demo's voice moment). Other notes wait for ▶: they run
   // 15-35 s each, and playing every one would talk over the presenter for two minutes of a three-minute demo.
   const last = fresh[fresh.length - 1];
@@ -861,6 +866,11 @@ function autoSpeak() {
 
 // ---------------------------------------------------------------- voice out
 let audioEl = null;
+function stopVoice() {
+  if (audioEl) { audioEl.pause(); audioEl = null; }
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  $$(".vn.on, #promiseListen.on").forEach(b => b.classList.remove("on"));
+}
 async function playMsg(id) {
   const msg = S.merchant.thread.find(m => m.id === id); if (!msg) return;
   return playText(`${msg.header}. ${msg.text}`, msg.lang, $(`.vn[data-id="${id}"]`));
@@ -946,7 +956,7 @@ async function runSizer() {
 function wire() {
   $("#btnNext").onclick = () => goStep(S.step + 1);
   $("#btnPrev").onclick = () => goStep(S.step - 1);
-  $("#btnReset").onclick = () => act(async () => { lastSpoken = Infinity; S = await post("/api/reset"); focus = "M01"; dispLang = "en"; lastSpoken = maxOutId(); proofLoaded = false; render(); });
+  $("#btnReset").onclick = () => act(async () => { lastSpoken = Infinity; S = await post("/api/reset"); focus = "M01"; dispLang = "en"; lastSpoken = sentOutId(); proofLoaded = false; render(); });
   $("#btnClock").onclick = () => act(async () => { S = await post("/api/advance", { next_event: true }); render(); autoSpeak(); });
   $("#offlineToggle").onchange = e => act(async () => { await post("/api/offline", { on: e.target.checked }); await load(); toast(e.target.checked ? "Offline: rules, templates and cached audio only" : "Online: Sarvam and the LLM are used if keys are set"); });
   $$("#langSw button").forEach(b => (b.onclick = () => setLang(b.dataset.l)));

@@ -6,17 +6,17 @@ App: `localhost:8000`, **Reset** pressed, welcome card closed, phone in **Englis
 | Time | On screen | Say (one breath each) |
 |---|---|---|
 | 0:00 | Slide 1 | Sambhal: an AI teammate for Paytm merchant loans. It steadies a merchant through a bad week *before* a payment is missed. |
-| 0:15 | Slide 2 | These loans take a fixed amount from every evening's sales. A wedding or an illness shuts the shop, unpaid installments pile up, and reopening day sweeps the backlog. Early cases mostly resolve, 83–90%; at 90 days only 30–35% is recovered. Timing is everything. |
-| 0:45 | Slide 3 | From 1 January, RBI requires a documented early-help step and strict contact rules. Lenders have ten weeks. Let me show you. **→ browser** |
+| 0:15 | Slide 2 | These loans take a fixed amount from every evening's sales. A wedding or an illness shuts the shop and unpaid installments pile up: on reopening day they're either swept from his sales or overdue on his record. Two facts from Paytm's Q2 FY27 release: 83–90% of Bucket-1 cases resolve, and 30–35% is recovered at 90+ days overdue. |
+| 0:45 | Slide 3 | From 1 January (RBI/2026-27/230), lenders must document how they engaged a struggling borrower, and explain the options, before escalating. Sambhal's audit log is that record. Let me show you. **→ browser** |
 | 1:00 | Dot **0** | Ravi, a kirana in Bengaluru: ₹850 a day from his sales, 71 installments in a row. The app is in English for you; Ravi uses it in Kannada. |
 | 1:15 | Dot **2** | Two days below half. Sambhal opens a case before anything is missed. It's 9 pm, so RBI's 8-to-7 rule holds the message. |
 | 1:30 | **Next** (3) | The note plays by itself: let it run a few seconds. "Help, not a demand." Tap **ಕನ್ನಡ**: "this is what Ravi actually hears." Tap **English**. |
 | 2:00 | 🎙 Speak | "There's a wedding at home, the shop is closed till Sunday." → It read a family function, 3 days: the days come from code, not the AI. It offers only the lender's pre-approved pause. |
 | 2:30 | **Next** ×2 (5) | He taps Accept: Friday to Sunday paused, ₹1,032 from Monday. |
-| 2:45 | Dot **7** | Monday: ₹1,032 instead of ₹3,400. 17% of his sales, not 57%. Never overdue. |
+| 2:45 | Dot **7** | Monday: ₹1,032, 17% of his sales. Without Sambhal the backlog is either swept from Monday's sales (₹3,400 in our model, as PhonePe documents) or overdue on his record. Sambhal prevents both. |
 | 3:10 | Dot **9** | And it prepares him: ₹100 on good days. Had it been on, ₹3,800 would have covered the wedding by itself. **→ slides** |
 | 3:30 | Slide 4 | Same 50 merchants, same days: 22 overdue without, 5 with, and those 5 are with a person by design. Zero rule breaks in 73 messages. |
-| 3:50 | Slide 5 | Lenders pay, merchants never do: inside Paytm it lifts collections Paytm already earns on; outside, a Pi module per loan plus an outcome fee. |
+| 3:50 | Slide 5 | Lenders pay, merchants never do: inside Paytm it lifts collections Paytm already earns on, and Paytm has approved up to ₹590 Cr of first-loss guarantees for five lenders in FY27, so on-track loans matter to it directly. Outside, a Pi module per loan plus an outcome fee. |
 | 4:05 | Slide 6 | A score says who is at risk. Sambhal changes what happens next. |
 
 Three safe ways to give Ravi's reply at 2:00, all giving the 3-day story: say the line with **"till Sunday"**, tap **Family function**, or press **Next** (step 4 adds his reply). Don't say another number of days: "two days" would offer 2, and Monday's numbers would no longer match the slides. If you're behind at 1:15, click
@@ -44,7 +44,7 @@ use the 🎙 shortcut instead.
 | 4 Ravi replies | How Sambhal read it | Speak the line in English, "There's a wedding at home, the shop is closed till Sunday" (or tap the 🎙 shortcut). Family function, 3 days: **the days come from code, not the AI**. |
 | 5 Accept | Deduction calendar | The pause comes from the lender's menu file. Fri–Sun paused, ₹1,032 from Monday. Quiet until Monday. |
 | 6 Weekend | With vs without | Nothing deducted, nothing overdue, no messages. |
-| 7 Monday | Payoff card | **₹1,032 vs ₹3,400.** 17% vs 57% of his sales. Never overdue vs 3 days on his record. |
+| 7 Monday | Payoff card | **₹1,032**, 17% of his sales, never overdue. Without Sambhal the backlog is either swept from Monday's sales (₹3,400, 57%: our model, as PhonePe documents) or overdue on his record. Sambhal prevents both. |
 | 8 Tuesday | Audit log | Recovered, case closed, every decision logged. The closing message offers pay-ahead. |
 | 9 Prepare | Third payoff box | Pay-ahead: ₹100 on days he sells ₹6,000+. Had it been on, ₹3,800 would have covered the wedding by itself. "We don't just get him through the bad week. We get him ready for the next one." Optional, 10 s: My loan → *New loan? Check what fits*: ₹2.5 lakh is Tight (₹1,562 a day, 26% of his slowest week); it suggests up to ₹1.9 lakh. "Ready for the next loan too, and the lender decides." |
 
@@ -70,7 +70,9 @@ with evidence before it goes live."
 * **"What if the AI says something wrong?"** The LLM never decides amounts or days. "Yes" only counts without a question or "not". If it rephrases, the check rejects new numbers or threats. Show V01–V05 and the promise panel on the Proof tab.
 * **"What about fraud?"** Imran: sales collapse but "all fine" → review, no relief. Shobha: a "closed" shop with normal sales gets its pause cut short.
 * **"Isn't pay-ahead just taking money earlier?"** Yes, and that's the point: the same total, moved from his best days to cover his worst. It's his choice, off any time, installments paid early to the lender (not a deposit). The replay's pay-ahead column assumes everyone opts in, so it's an upper bound we'd test in a pilot.
-* **"Who pays?"** Lending partners: fewer loans slipping past due, lower cost per case than a call centre, RBI's rules (1 Jan 2027) built in.
+* **"Who pays?"** Lending partners: fewer loans slipping past due, lower cost per case than a call centre, RBI's rules (1 Jan 2027) built in. Paytm cares directly: it approved up to ₹590 Cr of first-loss guarantees (DLG) for five lenders in FY27 (26 Oct 2026 filing, Annexure III). Say "up to", never "losses".
+* **"Doesn't Saison or Piramal already do this?"** They're Paytm's own lending partners, and they validate the need. Only Paytm sees daily sales while installments are still being paid, two days before a lender sees anything.
+* **"Is this required by RBI?"** RBI/2026-27/230 (in force 1 Jan 2027) requires lenders to document engagement with distressed borrowers before escalating, and to explain resolution options. Sambhal's audit log is that record. RBI doesn't require prediction; spotting it early is our choice.
 * **"What's real?"** Voice (Sarvam), understanding (Sarvam LLM), rules engine, ledger, tests are real and were tested live. Merchants and the settlement feed are synthetic. Say it plainly.
 * **"How would you pilot it?"** Merchants with Sambhal vs similar merchants without. Measure: overdue rate, biggest deduction, complaints, cost per case, pay-ahead uptake, violations (target 0).
 

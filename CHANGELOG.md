@@ -90,6 +90,13 @@
   the model's day count is used only if the merchant mentioned a duration, otherwise the lender's full pause is
   offered (trust, then check shortens it if the shop reopens); one-tap reasons are read by the rules only.
   English mode no longer repeats "Accepted: …" twice. Checked live: no-duration replies get 3 days. 160 tests.
+- 31 Oct, noon, fact update from Siddh's verified research (wording only, no logic): Bucket-1 83–90% and 90+ day
+  30–35% cited to Paytm Q2 FY27 Earnings Release p.15 as two facts (deck arrow removed); 1.64 crore merchants on
+  subscription (Q2 FY27); up to ₹590 Cr of DLG for five lenders in FY27 (26 Oct 2026 filing, Annexure III) under
+  who pays; the Monday sweep labelled "our model, as PhonePe documents", told as swept or overdue, Sambhal
+  prevents both; RBI/2026-27/230 described as documenting engagement before escalating (the audit log is that
+  record), no prediction claim; Saison/Piramal judge answer; "NEW" tags removed. Deck, demo script, README, guide,
+  step 7 caption and the payoff card's note.
 
 ## On the day (31 Oct 2026)
 - 

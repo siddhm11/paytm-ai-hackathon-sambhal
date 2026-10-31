@@ -4,7 +4,8 @@
 Paytm Build for India AI Hackathon, Bengaluru · Track 2: AI-Powered Financial Journeys · Team chill.out
 
 Paytm merchant loans are repaid from the merchant's daily settlement. When a shop has a bad week, unpaid
-installments carry forward and land in one large sweep, and the merchant's record shows days overdue.
+installments carry forward: on reopening day they are either swept from the merchant's sales (as in our model, and as
+PhonePe documents for its loans) or left overdue on the record.
 Paytm sees settlements every day, so it can spot trouble days before a miss. Sambhal uses that:
 
 1. **Detect.** After every evening settlement, a plain rule flags shops whose sales fell below half of their

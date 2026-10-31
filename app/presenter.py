@@ -31,8 +31,8 @@ STEPS = [
      "caption": "No sales, no deduction, nothing overdue, no messages."},
     {"at": "2026-10-26T21:05", "title": "Monday: back to business", "phone": "home", "tab": "week",
      "spot": "payoff",
-     "caption": "₹1,032 deducted: 17% of the day's sales. Without Sambhal: ₹3,400 (57%) in one sweep, after three "
-                "days overdue."},
+     "caption": "₹1,032 deducted: 17% of the day's sales. Without Sambhal the backlog is either swept from Monday's "
+                "sales (₹3,400, 57%: our model, as PhonePe documents) or overdue on his record. Sambhal prevents both."},
     {"at": "2026-10-27T08:00", "title": "Tuesday 8 am: case closed", "phone": "chat", "tab": "audit", "spot": "audit",
      "caption": "Sambhal confirms the recovery and closes the case. Every decision is in the lender's audit log."},
     {"at": "2026-10-27T08:10", "title": "Prepare: Ravi turns on pay-ahead", "action": "ravi_cushion", "phone": "home",

@@ -640,7 +640,7 @@ async function renderWeek() {
       <td class="n">${r.settled ? inr(r.without.deducted) : "—"}</td><td>${r.settled && r.without.arrears ? `${inr(r.without.arrears)} overdue · ${r.without.dpd}d` : ""}</td></tr>`).join("");
   const plural = n => `${n} day${n === 1 ? "" : "s"}`;
   const payoff = woMax.without.deducted > woMax.with.deducted ? `<div>
-      <p class="po-head">${fmtDay(woMax.date)}: the day the backlog lands <span>· same sales, same day</span></p>
+      <p class="po-head">${fmtDay(woMax.date)}: the day the backlog lands <span>· same sales, same day · the sweep is our model, as PhonePe documents</span></p>
       <div class="payoff">
         <div class="po wo"><span class="k">Without Sambhal</span><span class="v">${inr(woMax.without.deducted)}</span>
           <span class="s">${pct(shareWo)} of the day's sales, taken in one go</span><span class="s">${plural(odWo)} overdue on the record</span></div>

@@ -64,6 +64,8 @@
   name. 156 tests. Remade on free credit (~₹5): the 5 lines the presenter plays with a date range (Ravi's offer
   and confirmation, Shobha's offer and confirmation, the Bellandur notice). Still the older audio, by choice:
   4 lines with only "+", 2 with only the header pause, 4 that play only if a quick-reply chip is tapped.
+
+## On the day (31 Oct 2026, finale)
 - 31 Oct, 2 am, third Wispr listening test on those 5 lines: all 5 date ranges heard as "from X to Y"
   (23ರಿಂದ 25ರವರೆಗೆ, 30ರಿಂದ 1ರವರೆಗೆ, 29ರಿಂದ 31ರವರೆಗೆ), every amount right (₹2,550, ₹182, ₹850, ₹1,680, ₹120,
   ₹560, ₹3,300, ₹235), "+" heard as ಮತ್ತು, the name never mistaken for ಸಂಭಾಷಣಾ. Story audio frozen; a copy
@@ -98,5 +100,7 @@
   record), no prediction claim; Saison/Piramal judge answer; "NEW" tags removed. Deck, demo script, README, guide,
   step 7 caption and the payoff card's note.
 
-## On the day (31 Oct 2026)
-- 
+- 31 Oct, 2:30 pm, submission (docs, deck and audio only; no code changed): README opens with a section for
+  judges (run, demo keys, real vs simulated, how we used Sarvam); the story's 43 saved Sarvam voice notes (44 MB)
+  are now in the repo, so the demo speaks without a key; deck gains an executive summary (slide 1) and "How we
+  used Sarvam" (last slide), 160 tests on the slides, PDF in docs/.

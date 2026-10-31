@@ -3,6 +3,54 @@
 **Repayment help for Paytm merchant loans, before the first missed payment, and ready for the next bad week.**
 Paytm Build for India AI Hackathon, Bengaluru · Track 2: AI-Powered Financial Journeys · Team chill.out
 
+## For judges
+
+**In one line:** Paytm sees a shop's bad week in its daily sales before a loan payment fails; Sambhal talks to the
+merchant by voice in their language, offers only the lender's pre-approved relief, and checks that they recovered.
+
+**Run it** (Python 3.10+, no API keys needed):
+
+```bash
+./run.sh             # Mac / Linux
+run_windows.bat      # Windows
+```
+
+Both set up a virtual environment, install, run the 160 tests and start the app. Open **http://localhost:8000**.
+
+**The demo:** close the welcome card, then press the **→ arrow key** (or **Next ▶**) through steps **0–9**: Ravi's
+bad week, from the first slow day to recovery and pay-ahead. Each step has a caption and highlights what to look
+at. **←** goes back, **Reset** starts again, steps 10–13 (dashed dots) go beyond Ravi. The phone opens in English;
+tap **ಕನ್ನಡ** in its header to see and hear what Ravi gets.
+
+**Real vs simulated:**
+
+* Real, running code: the early-warning rule, lender policy engine, repayment ledger, guardrails (RBI contact
+  rules), audit log, 40 scenario checks, 160 tests and the with/without replay.
+* Real Sarvam AI: voice in, voice out, and the language model that reads free-form replies (tested live, 29–31 Oct).
+* Simulated: the 50 merchants, their loans and sales, the Paytm settlement feed, the lender ("Demo NBFC") and its
+  staff. No real payments or messages are sent.
+
+**How we used Sarvam:**
+
+* **Saaras v4** (speech-to-text): the merchant answers by voice in Kannada, Hindi or English; the language is
+  detected automatically.
+* **Bulbul v3** (text-to-speech, voice *priya*): every message is also a voice note in the merchant's language.
+* **Sarvam-105b** (language model): reads a reply like "wedding at home, shop shut till Sunday" as a reason. It
+  never sets amounts or days: code does.
+* **Saaras as the listener:** every saved voice note is played back through speech-to-text and remade if an
+  amount or the ending isn't heard as written. Listening tests found four faults, all fixed: ₹850 spoken as "800"
+  in Kannada (amounts are now given to the voice in Kannada words); long Hindi lines cut off (now spoken a sentence
+  at a time); "सब ठीक है?" sounding like a statement (Hindi questions now start with क्या); "23–25 Oct" heard as
+  "23 and 25" (now spoken "from 23 to 25").
+
+**No key?** The story's voice notes are in the repo as saved Sarvam audio (`data/tts_cache/`), so they play without
+a key (the header chip then says *Voice: browser*). The rules reader understands typed or tapped replies. To use
+Sarvam live, put `SARVAM_API_KEY` in `.env`.
+
+**Deck:** [`docs/Sambhal-deck.pdf`](docs/Sambhal-deck.pdf). **On-the-day changes:** [`CHANGELOG.md`](CHANGELOG.md).
+
+## What Sambhal does
+
 Paytm merchant loans are repaid from the merchant's daily settlement. When a shop has a bad week, unpaid
 installments carry forward: on reopening day they are either swept from the merchant's sales (as in our model, and as
 PhonePe documents for its loans) or left overdue on the record.
@@ -54,11 +102,11 @@ briefly highlights what the caption talks about. **Big text** in the header is f
 **No keys? It still runs.** Without keys Sambhal uses its multilingual rules reader, approved templates and the
 browser's own voice. The page loads nothing from the internet (fonts are bundled). With `OFFLINE=1` (or the
 **Offline** switch) it never touches the network, which is the fallback if venue wifi fails. Audio saved by
-`warm_voice_cache.py` still plays offline.
+`warm_voice_cache.py` still plays offline; the story's voice notes ship with the repo.
 
 ## The screen
 
-**Left: the merchant's app** (in their language, English underneath with **EN**):
+**Left: the merchant's app** (opens in English; **ಕನ್ನಡ** in the phone header switches to the merchant's language):
 
 * **Home:** last settlement, next deduction, pay-ahead, and three big buttons: *tell us about a closure* (pick a
   reason and dates), *ask about my loan*, *talk to a person*. **Sambhal's promise** opens six promises, read aloud,
@@ -83,7 +131,7 @@ lender what-if and the audit log.
 | 4 | Fri 8:20 am | Ravi replies by voice: *ಮನೆಯಲ್ಲಿ ಮದುವೆ ಇದೆ, ಭಾನುವಾರದವರೆಗೆ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತೆ* (wedding at home, shop shut till Sunday). Sambhal offers the lender's 3-day pause |
 | 5 | Fri 8:22 am | Ravi taps Accept. The pause is written to the deduction calendar. Quiet until Monday (family function) |
 | 6 | Sun 9:05 pm | Shop shut. No deduction, nothing overdue, no messages |
-| 7 | Mon 9:05 pm | ₹1,032 deducted (17% of sales). **Without Sambhal: ₹3,400 (57%) after 3 days overdue** |
+| 7 | Mon 9:05 pm | ₹1,032 deducted (17% of sales). **Without Sambhal (our model): ₹3,400 (57%) swept after 3 days overdue** |
 | 8 | Tue 8:00 am | Recovery confirmed, case closed. The message offers pay-ahead |
 | 9 | Tue 8:10 am | **Prepare:** Ravi turns on pay-ahead (₹100 on days he sells ₹6,000 or more). Had it been on from the start, ₹3,800 paid ahead would have covered the wedding by itself: no pause, no catch-up, nothing overdue |
 | 10 | Tue 11:00 am | *Beyond Ravi:* **Shobha tells us first** about her sister's wedding (Fri–Sun); the pause is booked for those days |
@@ -204,9 +252,9 @@ earlier, on days when it hurts least. A lender would need to confirm there is no
 | Real (running code) | Simulated |
 |---|---|
 | Early-warning rule, neighbourhood alerts, policy engine, ledger maths, pay-ahead, guardrails, audit | Merchants, loans and sales (synthetic) |
-| Sarvam speech-to-text and text-to-speech (tested live with a key on 29 Oct) | Paytm settlement feed and lender systems |
+| Sarvam speech-to-text and text-to-speech (tested live with a key, 29–31 Oct) | Paytm settlement feed and lender systems |
 | Sarvam LLM understanding of free-form replies (tested live), rules reader always | Merchant replies for the background shops |
-| 40 scenario checks, 156 tests, with/without replay, what-if | Lender staff decisions in the replay; delivery channel (shown as an app, not WhatsApp/SMS) |
+| 40 scenario checks, 160 tests, with/without replay, what-if | Lender staff decisions in the replay; delivery channel (shown as an app, not WhatsApp/SMS) |
 
 ## Configuration (`.env`)
 
@@ -227,7 +275,7 @@ stepping through the week never waits on the network.
 ## Tests
 
 ```bash
-pytest -q                       # 156 tests: all 40 scenarios, the story, replay, readers, reply safety, pay-ahead,
+pytest -q                       # 160 tests: all 40 scenarios, the story, replay, readers, reply safety, pay-ahead,
                                 #   tell us first, neighbourhood alert, staff actions, what-if, promises, server start,
                                 #   mocked LLM and Sarvam (tests never touch the network)
 python scripts/run_evals.py     # human-readable report
@@ -255,11 +303,13 @@ on the clean files found three faults: the Kannada voice dropped "fifty" from am
 sounded like a statement ("everything is fine"). Now the voice is given amounts in Kannada words with ರೂಪಾಯಿ
 (the screen still shows ₹850), long lines are spoken a sentence at a time, Hindi questions say क्या, and
 `warm_voice_cache.py` plays every saved line back through speech-to-text and remakes any whose amount or ending
-isn't heard (up to 3 times).
+isn't heard (up to 3 times). A second test found "ಅಕ್ಟೋಬರ್ 23–25" heard as "23 and 25" (the dash is silent, so
+Saturday sounded deducted): date ranges are now spoken "from 23 to 25" in all three languages. A third test passed
+on every remade line.
 
 ## Built before vs on the day
 
-The organisers confirmed that code written before the event is allowed. This repository was built before
-31 October 2026. Work done on the day is listed in `CHANGELOG.md`.
+The organisers confirmed that code written before the event is allowed. Sambhal was built 28–30 October 2026.
+Changes made on 31 October, the day of the finale, are listed under *On the day* in `CHANGELOG.md`.
 
 *Prototype. All merchants, loans, sales and the lender ("Demo NBFC") are fictional. Not affiliated with any lender.*

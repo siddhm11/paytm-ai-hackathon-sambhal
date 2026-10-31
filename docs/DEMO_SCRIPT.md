@@ -1,3 +1,29 @@
+# 5-minute slot: run of show (target 4:15, leaves time for one question)
+
+Deck: `Sambhal – Paytm Build for India (5-min).pptx` (6 slides; the PDF beside it has the fonts built in).
+App: `localhost:8000`, **Reset** pressed, welcome card closed, phone in **English**.
+
+| Time | On screen | Say (one breath each) |
+|---|---|---|
+| 0:00 | Slide 1 | Sambhal: an AI teammate for Paytm merchant loans. It steadies a merchant through a bad week *before* a payment is missed. |
+| 0:15 | Slide 2 | These loans take a fixed amount from every evening's sales. A wedding or an illness shuts the shop, unpaid installments pile up, and reopening day sweeps the backlog. Early cases mostly resolve, 83–90%; at 90 days only 30–35% is recovered. Timing is everything. |
+| 0:45 | Slide 3 | From 1 January, RBI requires a documented early-help step and strict contact rules. Lenders have ten weeks. Let me show you. **→ browser** |
+| 1:00 | Dot **0** | Ravi, a kirana in Bengaluru: ₹850 a day from his sales, 71 installments in a row. The app is in English for you; Ravi uses it in Kannada. |
+| 1:15 | Dot **2** | Two days below half. Sambhal opens a case before anything is missed. It's 9 pm, so RBI's 8-to-7 rule holds the message. |
+| 1:30 | **Next** (3) | The note plays by itself: let it run a few seconds. "Help, not a demand." Tap **ಕನ್ನಡ**: "this is what Ravi actually hears." Tap **English**. |
+| 2:00 | 🎙 Speak | "There's a wedding at home, the shop is closed till Sunday." → It read a family function, 3 days: the days come from code, not the AI. It offers only the lender's pre-approved pause. |
+| 2:30 | **Next** ×2 (5) | He taps Accept: Friday to Sunday paused, ₹1,032 from Monday. |
+| 2:45 | Dot **7** | Monday: ₹1,032 instead of ₹3,400. 17% of his sales, not 57%. Never overdue. |
+| 3:10 | Dot **9** | And it prepares him: ₹100 on good days. Had it been on, ₹3,800 would have covered the wedding by itself. **→ slides** |
+| 3:30 | Slide 4 | Same 50 merchants, same days: 22 overdue without, 5 with, and those 5 are with a person by design. Zero rule breaks in 73 messages. |
+| 3:50 | Slide 5 | Lenders pay, merchants never do: inside Paytm it lifts collections Paytm already earns on; outside, a Pi module per loan plus an outcome fee. |
+| 4:05 | Slide 6 | A score says who is at risk. Sambhal changes what happens next. |
+
+If the mic misbehaves at 2:00, tap **Next** instead: step 4 adds Ravi's reply for you. If you're behind at 1:15, skip
+straight from dot 0 to **Next** at dot 3. Steps 10–13 and the what-if are for questions only.
+
+---
+
 # Demo cue cards (3 minutes, +1 minute "beyond Ravi" if there's time)
 
 Cue points to talk from, not lines to memorise. → advances a step. Each step opens the right phone screen and

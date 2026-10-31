@@ -400,7 +400,7 @@ class World:
         today = self.now.date()
         # Live input (typed or spoken by the presenter) goes to the AI. The background shops' scripted lines are
         # read by the rules, so stepping through the week never waits on the network.
-        live = self.use_llm and not simulated
+        live = self.use_llm and not simulated and via != "tap"     # one-tap reasons are fixed phrases: rules read them
         reading = nlu.read(text, m.lang, today) if live else nlu.read_rules(text, m.lang, today)
         indic = any("\u0900" <= c <= "\u097f" or "\u0c80" <= c <= "\u0cff" for c in text)
         lang = reading["language"] if indic else m.lang
@@ -448,7 +448,8 @@ class World:
             case.offered_terms[oid] = t
             opt = policy.option(oid)
             lang = self.merchants[mid].lang
-            cards.append({"id": oid, "label": opt["label"][lang], "label_en": opt["label"]["en"],
+            label = (lambda l: replies.pause_label(t["days"], l)) if t["kind"] == "pause" else (lambda l: opt["label"][l])
+            cards.append({"id": oid, "label": label(lang), "label_en": label("en"),
                           "text": replies.line(k, lang, **f), "text_en": replies.line(k, "en", **f),
                           "preview": preview(t, start)})
         parts.append(("offer_close", {}))
@@ -831,8 +832,9 @@ class World:
         lang = self.merchants[mid].lang
         self.msg_seq += 1
         opt = policy.option(option_id)
-        tap = Message(id=self.msg_seq, at=self.now, dir="in", lang=lang, text=f"✓ {opt['label'][lang]}",
-                      text_en=f"Accepted: {opt['label']['en']}", kind="accept", status="received", via=via,
+        label = (lambda l: replies.pause_label(t["days"], l)) if t["kind"] == "pause" else (lambda l: opt["label"][l])
+        tap = Message(id=self.msg_seq, at=self.now, dir="in", lang=lang, text=f"✓ {label(lang)}",
+                      text_en=f"Accepted: {label('en')}", kind="accept", status="received", via=via,
                       author="merchant", sent_at=self.now)
         tap.simulated = simulated
         case.messages.append(tap)

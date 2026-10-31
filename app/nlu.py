@@ -177,6 +177,19 @@ NOT_A_YES = ["not", "no", "don't", "dont", "nahi", "nahin", "mat", "illa", "beda
 BARE_NO = {"no", "nope", "nahi", "nahin", "illa", "nahi ji", "नहीं", "ಇಲ್ಲ", "ಬೇಡ"}
 
 
+TIME_EN = r"(?<![a-z])(days?|dina|din|week|weekend|hafta|tomorrow|kal|till|until|tak|varege|naale)(?![a-z])"
+TIME_HI = r"(?<![\u0900-\u097f])(दिन|हफ़्त|हफ्त|कल|तक)(?![\u0915-\u0939])"   # not तकलीफ (trouble)
+TIME_KN = r"(ದಿನ|ವಾರ|ನಾಳೆ|ವರೆಗೆ)"
+
+
+def mentions_time(text: str) -> bool:
+    """Does the reply say anything about how long (a number, days, a weekday, 'till', 'tomorrow')?"""
+    low = text.lower()
+    return bool(re.search(r"\d", text) or re.search(TIME_EN, low) or re.search(TIME_HI, text)
+                or re.search(TIME_KN, text) or any(_match(w, text, low) for ws in WEEKDAYS.values() for w in ws)
+                or any(w in (low if w.isascii() else text) for ws in NUMBER_WORDS.values() for w in ws if len(w) > 3))
+
+
 def read_rules(text: str, merchant_lang: str, today: date) -> dict:
     low = text.lower().strip()
     bare = low.strip(" .!,।")
@@ -202,7 +215,8 @@ Kannada/Hindi) about their daily loan installment. Classify the reply.
 Return JSON only: {"intent": one of %s,
  "secondary": a hardship intent also mentioned, or null,
  "language": "kn" | "hi" | "en",
- "event_days": integer number of days the shop is closed or affected if stated or implied, else null,
+ "event_days": integer number of days the shop is closed, ONLY if the merchant states it (a number of days, or an \
+end day such as "till Sunday"); otherwise null. Never guess a duration,
  "summary_en": one short English sentence saying what the merchant said}
 Definitions: bereavement = a death; medical_emergency = hospital/ICU/accident/surgery; illness = fever/unwell, not \
 hospital; family_event = wedding/function/ceremony at home; temporary_closure = shop shut for repair/travel; \
@@ -229,8 +243,11 @@ def read(text: str, merchant_lang: str, today: date) -> dict:
             "language": res.get("language") if res.get("language") in ("kn", "hi", "en") else rules["language"],
             # Days are a number, and code decides numbers: the rules' calendar maths wins when it found one
             # (the model counted Friday "till Sunday" as 2 days; it is 3).
+            # With no duration in the words at all, the model's number is a guess: ignore it, and the lender's full
+            # pause is offered (trust, then check shortens it if the shop reopens). Live, it guessed "1 day" for
+            # "Family function at home, shop closed", which broke Ravi's 3-day story.
             "event_days": rules["event_days"] if rules["event_days"] is not None else (
-                res.get("event_days") if isinstance(res.get("event_days"), int) else None),
+                res.get("event_days") if isinstance(res.get("event_days"), int) and mentions_time(text) else None),
             "summary_en": res.get("summary_en"), "matched": rules["matched"], "source": "llm",
         }
         # Safety net: keywords may escalate, never de-escalate.

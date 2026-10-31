@@ -337,6 +337,15 @@ PROMISES = [
 ]
 
 PAYAHEAD_LABEL = {"kn": "ಮುಂಗಡ ಕಂತು", "hi": "अग्रिम किस्त", "en": "Pay-ahead"}
+
+
+def pause_label(days: int, lang: str) -> str:
+    """'2-day pause': the days actually offered, which can be fewer than the menu item's maximum."""
+    if lang == "kn":
+        return f"{days} ದಿನದ ವಿರಾಮ" if days == 1 else f"{days} ದಿನಗಳ ವಿರಾಮ"
+    if lang == "hi":
+        return f"{days} दिन की छूट"
+    return f"{days}-day pause"
 QUICK_INTENT = {"family": "family_event", "illness": "illness", "closed": "temporary_closure", "slow": "business_slow",
                 "hospital": "medical_emergency", "fine": "business_normal", "more": "need_time", "ask": "question",
                 "person": "talk_to_person"}

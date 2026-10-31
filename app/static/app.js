@@ -431,7 +431,7 @@ function inBubble(msg, showEn) {
   const sim = msg.simulated ? ` <span class="tag sim">simulated</span>` : "";
   return `<div class="bubble in">
     <div class="body" ${langAttr(msg.lang)}>${esc(msg.text)}</div>
-    ${showEn && (msg.lang !== "en" || msg.kind === "accept") && msg.text_en ? `<div class="en">${esc(msg.text_en)}</div>` : ""}
+    ${showEn && (msg.lang !== "en" || msg.kind === "accept") && msg.text_en && msg.text_en !== msg.text ? `<div class="en">${esc(msg.text_en)}</div>` : ""}
     ${msg.said ? `<div class="en" ${langAttr(msg.said.lang)}>${esc(msg.said.text)}</div>` : ""}
     <div class="meta"><span>${via}${sim}</span><span>${fmtTime(msg.at)}</span></div>
   </div>`;

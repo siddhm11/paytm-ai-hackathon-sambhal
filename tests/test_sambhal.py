@@ -555,3 +555,40 @@ def test_listening_back_reads_kannada_number_words():
 ])
 def test_ranges_endings_and_pauses_are_spoken_clearly(text, lang, spoken):
     assert voice.speech_text(text, lang) == spoken
+
+
+def test_offer_card_and_accept_name_the_days_actually_offered():
+    # Live, a 1-day pause was shown on a card titled "3-day pause" and accepted as "3-day pause".
+    w = World(use_llm=False)
+    go_to(w, 3)
+    w.inbound("M01", "Wedding at home, shop closed for one day")
+    c = w.case_for("M01")
+    assert c.offered_terms["PAUSE_3"]["days"] == 1
+    card = c.cards[0]
+    assert (card["label"], card["label_en"]) == ("1 ದಿನದ ವಿರಾಮ", "1-day pause")
+    w.accept("M01", "PAUSE_3", via="tap")
+    tap = [m for m in c.messages if m.kind == "accept"][-1]
+    assert tap.text_en == "Accepted: 1-day pause" and "1 ದಿನದ ವಿರಾಮ" in tap.text
+    assert replies.pause_label(3, "en") == "3-day pause" and replies.pause_label(2, "hi") == "2 दिन की छूट"
+
+
+def test_the_model_cannot_invent_a_duration_the_merchant_did_not_say(monkeypatch):
+    monkeypatch.setattr(llm, "available", lambda: True)
+    monkeypatch.setattr(llm, "chat_json", lambda *a, **k: {"intent": "family_event", "event_days": 1, "language": "en",
+                                                         "summary_en": "Family function"})
+    friday = date(2026, 10, 23)
+    assert nlu.read("Family function at home, shop closed", "kn", friday)["event_days"] is None   # -> lender's full pause
+    assert nlu.read("Closed for one day, wedding", "kn", friday)["event_days"] == 1                # said, so it counts
+    assert not nlu.mentions_time("shop still closed") and not nlu.mentions_time("दुकान में तकलीफ है")
+
+
+def test_one_tap_reasons_are_read_by_the_rules_not_the_model(monkeypatch):
+    monkeypatch.setattr(llm, "available", lambda: True)
+    def no_model(*a, **k):
+        raise AssertionError("a one-tap reason must not go to the model")
+    monkeypatch.setattr(llm, "chat_json", no_model)
+    w = World(use_llm=True)
+    go_to(w, 3)
+    w.inbound("M01", replies.QUICK_REPLIES["family"]["en"], via="tap")
+    c = w.case_for("M01")
+    assert c.state == "offered" and c.offered_terms["PAUSE_3"]["days"] == 3

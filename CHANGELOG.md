@@ -84,6 +84,12 @@
   and when switching back to English; ಕನ್ನಡ plays the note in his language. `check_mic.py` adds Ravi's line
   spoken in English (as on stage). Venue network checks: keys pass (voice 1.4 s, STT 0.8 s, AI 1.0 s), mic passes
   in English and Kannada (heard in ~0.4 s).
+- 31 Oct, 11:30 am, found in rehearsal: Ravi was offered a 1-day pause on a card titled "3-day pause" and
+  "accepted a 3-day pause". Cause: with no duration in the reply (the "Family function" tap), the live model
+  guessed 1 day. Fixed three ways: cards and the accept bubble name the days actually offered ("1-day pause");
+  the model's day count is used only if the merchant mentioned a duration, otherwise the lender's full pause is
+  offered (trust, then check shortens it if the shop reopens); one-tap reasons are read by the rules only.
+  English mode no longer repeats "Accepted: …" twice. Checked live: no-duration replies get 3 days. 160 tests.
 
 ## On the day (31 Oct 2026)
 - 

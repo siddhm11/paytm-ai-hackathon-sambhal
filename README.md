@@ -47,7 +47,9 @@ tap **ಕನ್ನಡ** in its header to see and hear what Ravi gets.
 a key (the header chip then says *Voice: browser*). The rules reader understands typed or tapped replies. To use
 Sarvam live, put `SARVAM_API_KEY` in `.env`.
 
-**Deck:** [`docs/Sambhal-deck.pdf`](docs/Sambhal-deck.pdf). **On-the-day changes:** [`CHANGELOG.md`](CHANGELOG.md).
+**Deck:** [`docs/Sambhal-deck.pptx`](docs/Sambhal-deck.pptx) (PowerPoint, 17 slides; fonts DM Sans and Fraunces, free
+on Google Fonts) and [`docs/Sambhal-deck.pdf`](docs/Sambhal-deck.pdf) (same slides, fonts built in).
+**On-the-day changes:** [`CHANGELOG.md`](CHANGELOG.md).
 
 ## What Sambhal does
 

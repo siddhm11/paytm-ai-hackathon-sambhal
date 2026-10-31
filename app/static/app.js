@@ -853,7 +853,10 @@ function setCushion(on) {
 function autoSpeak() {
   const fresh = S.merchant.thread.filter(m => m.dir === "out" && m.status === "sent" && m.id > lastSpoken);
   lastSpoken = maxOutId();
-  if (fresh.length) playMsg(fresh[fresh.length - 1].id);
+  // Only the check-in plays by itself (Friday 8 am, the demo's voice moment). Other notes wait for ▶: they run
+  // 15-35 s each, and playing every one would talk over the presenter for two minutes of a three-minute demo.
+  const last = fresh[fresh.length - 1];
+  if (last && last.kind === "checkin") playMsg(last.id);
 }
 
 // ---------------------------------------------------------------- voice out
